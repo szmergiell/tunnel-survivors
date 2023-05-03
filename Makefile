@@ -1,6 +1,6 @@
 CC = clang
 CFLAGS = -g -Wall
-LFLAGS = -lSDL2
+LFLAGS = -lSDL2 -lSDL2_image
 SRC = src
 OBJ = obj
 SRCS = $(wildcard $(SRC)/*.c)
