@@ -8,14 +8,18 @@
 #include <SDL2/SDL_image.h>
 #include <stdlib.h>
 
+#include "ecs/components/position.h"
+#include "ecs/world.h"
 #include "game.h"
+#include "types.h"
 
 typedef struct Game {
-    int Width;
-    int Height;
+    u32 Width;
+    u32 Height;
     SDL_Window* Window;
     SDL_Renderer* Renderer;
     SDL_Surface* ScreenSurface;
+    World* World;
 } Game;
 
 Game* Game_create(void) {
@@ -28,7 +32,7 @@ Game* Game_create(void) {
         return game;
     }
 
-    int imageInitFlags = IMG_INIT_JPG;
+    u32 imageInitFlags = IMG_INIT_JPG;
     if (IMG_Init(imageInitFlags) != imageInitFlags) {
         printf("SDL Image could not be initialized. IMG_Error: %s\n", IMG_GetError());
         return game;
@@ -54,6 +58,14 @@ Game* Game_create(void) {
     }
 
     game->ScreenSurface = SDL_GetWindowSurface(game->Window);
+
+    game->World = World_create(game->Renderer, 100);
+
+    Position* position = calloc(sizeof(Position), 1);
+    position->X = game->Width / 2;
+    position->Y = game->Height / 2;
+
+    World_add_entity(game->World, position, NULL);
 
     return game;
 }
@@ -112,6 +124,8 @@ void Game_loop(Game* game) {
 
         SDL_SetRenderDrawColor(game->Renderer, 0, 0, 0, 0);
         SDL_RenderClear(game->Renderer);
+
+        World_update(game->World, 1);
 
         SDL_RenderPresent(game->Renderer);
     }
