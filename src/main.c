@@ -1,19 +1,15 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>
+
 #include "game.h"
 
 int main(int argc, char* args[]) {
-    if (!game_init()) {
-        return -1;
-    }
+    Game* game = Game_create();
 
-    if (!game_load_media()) {
-        return -1;
-    }
+    Game_loop(game);
 
-    game_loop();
+    Game_destroy(game);
 
-    game_close();
     return 0;
 }

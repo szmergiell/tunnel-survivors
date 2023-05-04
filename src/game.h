@@ -1,4 +1,7 @@
-bool game_init(void);
-bool game_load_media(void);
-void game_loop(void);
-void game_close(void);
+#include <SDL2/SDL.h>
+
+typedef struct Game Game;
+
+Game* Game_create(void);
+void Game_loop(struct Game* game);
+void Game_destroy(struct Game* game);

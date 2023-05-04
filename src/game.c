@@ -1,4 +1,6 @@
+#include <SDL2/SDL_pixels.h>
 #include <SDL2/SDL_rect.h>
+#include <SDL2/SDL_render.h>
 #include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_video.h>
 #include <stdbool.h>
@@ -6,53 +8,65 @@
 #include <SDL2/SDL_image.h>
 #include <stdlib.h>
 
-static const int SCREEN_WIDTH = 1920;
-static const int SCREEN_HEIGHT = 1080;
+#include "game.h"
 
-static const char* LOADING_SCREEN_IMAGE_PATH = "assets/loading_screen.jpg";
+typedef struct Game {
+    int Width;
+    int Height;
+    SDL_Window* Window;
+    SDL_Renderer* Renderer;
+    SDL_Surface* ScreenSurface;
+} Game;
 
-static SDL_Window* gWindow = NULL;
-static SDL_Surface* gScreenSurface = NULL;
-static SDL_Surface* gSplashSurface = NULL;
+Game* Game_create(void) {
+    Game* game = calloc(sizeof(Game), 1);
+    game->Width = 1920;
+    game->Height = 1080;
 
-bool game_init(void) {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("SDL could not be initialized. SDL_Error: %s\n", SDL_GetError());
-        return false;
+        return game;
     }
 
     int imageInitFlags = IMG_INIT_JPG;
     if (IMG_Init(imageInitFlags) != imageInitFlags) {
         printf("SDL Image could not be initialized. IMG_Error: %s\n", IMG_GetError());
-        return false;
+        return game;
     }
 
-    gWindow = SDL_CreateWindow(
+    game->Window = SDL_CreateWindow(
             "Tunel Survivors",
             SDL_WINDOWPOS_UNDEFINED,
             SDL_WINDOWPOS_UNDEFINED,
-            SCREEN_WIDTH,
-            SCREEN_HEIGHT,
+            game->Width,
+            game->Height,
             SDL_WINDOW_SHOWN);
 
-    if (gWindow == NULL) {
+    if (!game->Window) {
         printf("Window could not be created. SDL_Error: %s\n", SDL_GetError());
-        return false;
+        return game;
     }
 
-    gScreenSurface = SDL_GetWindowSurface(gWindow);
-    return true;
+    game->Renderer = SDL_CreateRenderer(game->Window, -1, SDL_RENDERER_ACCELERATED);
+    if (!game->Renderer) {
+        printf("Renderer could not be created. SDL_Error: %s\n", SDL_GetError());
+        return game;
+    }
+
+    game->ScreenSurface = SDL_GetWindowSurface(game->Window);
+
+    return game;
 }
 
-SDL_Surface* game_load_image(const char* path) {
+SDL_Surface* Game_load_image(SDL_Surface* screenSurface, const char* path) {
     SDL_Surface* surface = IMG_Load(path);
-    if (surface == NULL) {
+    if (!surface) {
         printf("Unable to load image %s. IMG_Error: %s\n", path, IMG_GetError());
         return NULL;
     }
 
-    SDL_Surface* optimizedSurface = SDL_ConvertSurface(surface, gScreenSurface->format, 0);
-    if (optimizedSurface == NULL) {
+    SDL_Surface* optimizedSurface = SDL_ConvertSurface(surface, screenSurface->format, 0);
+    if (!optimizedSurface) {
         printf("Unable to optimize image %s. SDL_Error: %s\n", path, SDL_GetError());
         return NULL;
     }
@@ -62,24 +76,31 @@ SDL_Surface* game_load_image(const char* path) {
     return optimizedSurface;
 }
 
-bool game_load_media(void) {
-    gSplashSurface = game_load_image(LOADING_SCREEN_IMAGE_PATH);
-    if (gScreenSurface == NULL) {
-        return false;
+SDL_Texture* Game_load_texture(SDL_Renderer* renderer, const char* path) {
+    SDL_Texture* texture = IMG_LoadTexture(renderer, path);
+    if (!texture) {
+        printf("Unable to create texutre from %s. IMG_Error: %s\n", path, IMG_GetError());
+        return NULL;
     }
 
-    return true;
+    return texture;
 }
 
-void game_display_loading_screen(void) {
+void Game_display_full_screen_surface(Game* game, SDL_Surface* surface) {
     SDL_Rect stretchRect;
-    stretchRect.w = SCREEN_WIDTH;
-    stretchRect.h = SCREEN_HEIGHT;
-    SDL_BlitScaled(gSplashSurface, NULL, gScreenSurface, &stretchRect);
-    SDL_UpdateWindowSurface(gWindow);
+    stretchRect.w = game->Width;
+    stretchRect.h = game->Height;
+    SDL_BlitScaled(surface, NULL, game->ScreenSurface, &stretchRect);
+    SDL_UpdateWindowSurface(game->Window);
 }
 
-void game_loop(void) {
+void Game_display_texture(SDL_Renderer* renderer, SDL_Texture* texture) {
+    SDL_RenderClear(renderer);
+    SDL_RenderCopy(renderer, texture, NULL, NULL);
+    SDL_RenderPresent(renderer);
+}
+
+void Game_loop(Game* game) {
     SDL_Event e;
     bool quit = false;
     while (!quit) {
@@ -89,17 +110,24 @@ void game_loop(void) {
             }
         }
 
-        game_display_loading_screen();
+        SDL_SetRenderDrawColor(game->Renderer, 0, 0, 0, 0);
+        SDL_RenderClear(game->Renderer);
+
+        SDL_RenderPresent(game->Renderer);
     }
 }
 
-void game_close(void) {
-    SDL_FreeSurface(gSplashSurface);
-    gSplashSurface = NULL;
+void Game_destroy(Game* game) {
 
-    SDL_DestroyWindow(gWindow);
-    gWindow = NULL;
+    SDL_DestroyRenderer(game->Renderer);
+    game->Renderer = NULL;
+
+    SDL_DestroyWindow(game->Window);
+    game->Window = NULL;
 
     IMG_Quit();
     SDL_Quit();
+
+    free(game);
+    game = NULL;
 }
