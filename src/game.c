@@ -1,7 +1,11 @@
+#include <SDL2/SDL_events.h>
 #include <SDL2/SDL_hints.h>
+#include <SDL2/SDL_keyboard.h>
+#include <SDL2/SDL_keycode.h>
 #include <SDL2/SDL_pixels.h>
 #include <SDL2/SDL_rect.h>
 #include <SDL2/SDL_render.h>
+#include <SDL2/SDL_scancode.h>
 #include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_video.h>
@@ -9,12 +13,14 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
+#include <stddef.h>
 #include <stdlib.h>
 
 #include "ecs/components/position.h"
 #include "ecs/world.h"
 #include "game.h"
 #include "types.h"
+#include "velocity.h"
 
 typedef struct Game {
     u32 Width;
@@ -23,6 +29,9 @@ typedef struct Game {
     SDL_Renderer* Renderer;
     SDL_Surface* ScreenSurface;
     World* World;
+    // TODO: consider the fact that both Game and World manipulate player state
+    Position* PlayerPosition;
+    Velocity* PlayerVelocity;
 } Game;
 
 Game* Game_create(void) {
@@ -69,14 +78,27 @@ Game* Game_create(void) {
 
     game->World = World_create(game->Renderer, 100);
 
-    for (usize i = 0; i < 100; i++) {
+    // first entity = 0 is player
+    game->PlayerPosition = calloc(sizeof(Position), 1);
+    game->PlayerPosition->X = game->Width / 2.0;
+    game->PlayerPosition->Y = game->Height / 2.0;
+
+    game->PlayerVelocity = calloc(sizeof(Velocity), 1);
+
+    World_add_entity(game->World, game->PlayerPosition, game->PlayerVelocity, NULL);
+
+    for (usize i = 1; i < 10; i++) {
         f32 rx = rand() / (f32)RAND_MAX;
         f32 ry = rand() / (f32)RAND_MAX;
         Position* position = calloc(sizeof(Position), 1);
         position->X = rx * game->Width;
         position->Y = ry * game->Height;
 
-        World_add_entity(game->World, position, NULL);
+        f32 rv = rand() / (f32)RAND_MAX;
+        Velocity* velocity = calloc(sizeof(Velocity), 1);
+        velocity->X = velocity->Y = 1;
+
+        World_add_entity(game->World, position, velocity, NULL);
     }
 
     return game;
@@ -135,10 +157,31 @@ void Game_loop(Game* game) {
             if (e.type == SDL_QUIT) {
                 quit = true;
             }
+            if (e.type == SDL_KEYDOWN &&
+                e.key.keysym.sym == SDLK_ESCAPE) {
+                quit = true;
+            }
         }
 
         SDL_SetRenderDrawColor(game->Renderer, 0, 0, 0, 0);
         SDL_RenderClear(game->Renderer);
+
+        // handle player movement
+        const u8* keyboardState = SDL_GetKeyboardState(NULL);
+        game->PlayerVelocity->X = 0;
+        game->PlayerVelocity->Y = 0;
+        if (keyboardState[SDL_SCANCODE_UP]) {
+            game->PlayerVelocity->Y += -1;
+        }
+        if (keyboardState[SDL_SCANCODE_DOWN]) {
+            game->PlayerVelocity->Y += 1;
+        }
+        if (keyboardState[SDL_SCANCODE_LEFT]) {
+            game->PlayerVelocity->X += -1;
+        }
+        if (keyboardState[SDL_SCANCODE_RIGHT]) {
+            game->PlayerVelocity->X += 1;
+        }
 
         World_update(game->World, 1);
 
@@ -155,7 +198,7 @@ void Game_loop(Game* game) {
 
         u64 delayedFrameTime = SDL_GetTicks64() - frameStart;
         f32 realFps = (delayedFrameTime > 0) ? 1000.0L / delayedFrameTime : 0.0;
-        printf("target frame time: %f, real fps: %f, frame time: %lu, loop fps: %f\n", targetFrameTime, realFps, loopTime, loopFps);
+        // printf("target frame time: %f, real fps: %f, frame time: %lu, loop fps: %f\n", targetFrameTime, realFps, loopTime, loopFps);
     }
 }
 

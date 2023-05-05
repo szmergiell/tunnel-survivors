@@ -1,3 +1,4 @@
+#include <SDL2/SDL_mouse.h>
 #include <SDL2/SDL_render.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,6 +7,7 @@
 #include "components/life.h"
 #include "systems/draw.h"
 #include "systems/move.h"
+#include "velocity.h"
 #include "world.h"
 
 typedef struct World {
@@ -13,6 +15,7 @@ typedef struct World {
     usize Count;
     Position** Positions;
     Life** Lives;
+    Velocity** Velocities;
     SDL_Renderer* renderer;
 } World;
 
@@ -21,18 +24,20 @@ World* World_create(SDL_Renderer* renderer, usize capacity) {
     world->Capacity = capacity;
     world->Count = 0;
     world->Positions = calloc(sizeof(world->Positions), capacity);
+    world->Velocities = calloc(sizeof(world->Velocities), capacity);
     world->Lives = calloc(sizeof(world->Lives), capacity);
     world->renderer = renderer;
 
     return world;
 }
 
-bool World_add_entity(World* world, Position* position, Life* life) {
+bool World_add_entity(World* world, Position* position, Velocity* velocity, Life* life) {
     if (world->Count == world->Capacity) {
         printf("World reached its' capacity: %zu", world->Capacity);
         return false;
     }
     world->Positions[world->Count] = position;
+    world->Velocities[world->Count] = velocity;
     world->Lives[world->Count] = life;
     world->Count++;
 
@@ -41,8 +46,11 @@ bool World_add_entity(World* world, Position* position, Life* life) {
 
 void World_update(World* world, u32 dt) {
     for (usize i = 0; i < world->Capacity; i++) {
-        Position player = { 1920/2.0, 1080/2.0 };
-        Move(world->Positions[i], &player);
+        if (i == 0) {
+            MovePlayer(world->Positions[i], world->Velocities[i]);
+        } else {
+            Move(world->Positions[i], world->Velocities[i], world->Positions[0]);
+        }
         Draw(world->renderer, world->Positions[i]);
     }
 }

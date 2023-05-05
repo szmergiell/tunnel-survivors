@@ -3,7 +3,7 @@
 #include "../components/position.h"
 
 void Draw(SDL_Renderer* renderer, Position* position) {
-    if (!position) {
+    if (!renderer || !position) {
         return;
     }
 
