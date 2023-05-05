@@ -11,3 +11,4 @@ typedef struct World World;
 World* World_create(SDL_Renderer* renderer, usize capacity);
 bool World_add_entity(World* world, Position* position, Life* life);
 void World_update(World* world, u32 dt);
+void World_destroy(World* world);

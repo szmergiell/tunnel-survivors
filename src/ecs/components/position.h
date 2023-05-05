@@ -3,6 +3,6 @@
 #include "../../types.h"
 
 typedef struct Position {
-    u32 X;
-    u32 Y;
+    f32 X;
+    f32 Y;
 } Position;

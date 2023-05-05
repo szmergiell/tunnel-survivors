@@ -5,6 +5,7 @@
 #include "components/position.h"
 #include "components/life.h"
 #include "systems/draw.h"
+#include "systems/move.h"
 #include "world.h"
 
 typedef struct World {
@@ -19,8 +20,8 @@ World* World_create(SDL_Renderer* renderer, usize capacity) {
     World* world = calloc(sizeof(World), 1);
     world->Capacity = capacity;
     world->Count = 0;
-    world->Positions = calloc(sizeof(Position), capacity);
-    world->Lives = calloc(sizeof(Life), capacity);
+    world->Positions = calloc(sizeof(world->Positions), capacity);
+    world->Lives = calloc(sizeof(world->Lives), capacity);
     world->renderer = renderer;
 
     return world;
@@ -40,6 +41,19 @@ bool World_add_entity(World* world, Position* position, Life* life) {
 
 void World_update(World* world, u32 dt) {
     for (usize i = 0; i < world->Capacity; i++) {
+        Position player = { 1920/2.0, 1080/2.0 };
+        Move(world->Positions[i], &player);
         Draw(world->renderer, world->Positions[i]);
     }
+}
+
+void World_destroy(World *world) {
+    free(world->Positions);
+    world->Positions = NULL;
+
+    free(world->Lives);
+    world->Lives = NULL;
+
+    free(world);
+    world = NULL;
 }

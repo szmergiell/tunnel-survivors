@@ -7,13 +7,13 @@ void Draw(SDL_Renderer* renderer, Position* position) {
         return;
     }
 
-    SDL_Rect rectangle = {
+    SDL_FRect rectangle = {
         .x = position->X,
         .y = position->Y,
-        .w = 100,
-        .h = 100
+        .w = 10,
+        .h = 10
     };
 
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderFillRect(renderer, &rectangle);
+    SDL_RenderFillRectF(renderer, &rectangle);
 }

@@ -1,11 +1,14 @@
+#include <SDL2/SDL_hints.h>
 #include <SDL2/SDL_pixels.h>
 #include <SDL2/SDL_rect.h>
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_surface.h>
+#include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_video.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 #include <stdlib.h>
 
 #include "ecs/components/position.h"
@@ -32,7 +35,12 @@ Game* Game_create(void) {
         return game;
     }
 
-    u32 imageInitFlags = IMG_INIT_JPG;
+    if (TTF_Init() < 0) {
+        printf("SDL TTF could not be initialized. TTF_Error: %s\n", TTF_GetError());
+        return game;
+    }
+
+    i32 imageInitFlags = IMG_INIT_JPG;
     if (IMG_Init(imageInitFlags) != imageInitFlags) {
         printf("SDL Image could not be initialized. IMG_Error: %s\n", IMG_GetError());
         return game;
@@ -61,11 +69,15 @@ Game* Game_create(void) {
 
     game->World = World_create(game->Renderer, 100);
 
-    Position* position = calloc(sizeof(Position), 1);
-    position->X = game->Width / 2;
-    position->Y = game->Height / 2;
+    for (usize i = 0; i < 100; i++) {
+        f32 rx = rand() / (f32)RAND_MAX;
+        f32 ry = rand() / (f32)RAND_MAX;
+        Position* position = calloc(sizeof(Position), 1);
+        position->X = rx * game->Width;
+        position->Y = ry * game->Height;
 
-    World_add_entity(game->World, position, NULL);
+        World_add_entity(game->World, position, NULL);
+    }
 
     return game;
 }
@@ -115,7 +127,10 @@ void Game_display_texture(SDL_Renderer* renderer, SDL_Texture* texture) {
 void Game_loop(Game* game) {
     SDL_Event e;
     bool quit = false;
+
     while (!quit) {
+        u64 frameStart = SDL_GetTicks64();
+
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) {
                 quit = true;
@@ -128,10 +143,25 @@ void Game_loop(Game* game) {
         World_update(game->World, 1);
 
         SDL_RenderPresent(game->Renderer);
+
+        u64 loopTime = SDL_GetTicks64() - frameStart;
+        f32 loopFps = (loopTime > 0) ? 1000.0L / loopTime : 0.0;
+        f32 targetFps = 60;
+        f64 targetFrameTime = 1000.0L / targetFps;
+        f64 delay = targetFrameTime - (SDL_GetTicks64() - frameStart);
+        if (delay > 0) {
+            SDL_Delay(delay);
+        }
+
+        u64 delayedFrameTime = SDL_GetTicks64() - frameStart;
+        f32 realFps = (delayedFrameTime > 0) ? 1000.0L / delayedFrameTime : 0.0;
+        printf("target frame time: %f, real fps: %f, frame time: %lu, loop fps: %f\n", targetFrameTime, realFps, loopTime, loopFps);
     }
 }
 
 void Game_destroy(Game* game) {
+    World_destroy(game->World);
+    game->World = NULL;
 
     SDL_DestroyRenderer(game->Renderer);
     game->Renderer = NULL;
@@ -140,6 +170,7 @@ void Game_destroy(Game* game) {
     game->Window = NULL;
 
     IMG_Quit();
+    TTF_Quit();
     SDL_Quit();
 
     free(game);

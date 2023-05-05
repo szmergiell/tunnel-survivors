@@ -10,8 +10,8 @@ DEPS := $(OBJS:.o=.d)
 INC_DIRS := $(shell find $(SRC_DIRS) -type d)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
-CPPFLAGS ?= $(INC_FLAGS) -MMD -MP
-LDFLAGS ?= -lSDL2 -lSDL2_image
+CPPFLAGS ?= $(INC_FLAGS) -MMD -MP -g -Wall
+LDFLAGS ?= -lSDL2 -lSDL2_image -lSDL2_ttf
 
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
 	$(CC) $(OBJS) -o $@ $(LDFLAGS)
