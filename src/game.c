@@ -1,26 +1,17 @@
-#include <SDL2/SDL_events.h>
-#include <SDL2/SDL_hints.h>
-#include <SDL2/SDL_keyboard.h>
-#include <SDL2/SDL_keycode.h>
-#include <SDL2/SDL_pixels.h>
-#include <SDL2/SDL_rect.h>
-#include <SDL2/SDL_render.h>
-#include <SDL2/SDL_scancode.h>
-#include <SDL2/SDL_surface.h>
-#include <SDL2/SDL_timer.h>
-#include <SDL2/SDL_video.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
-#include <stddef.h>
 #include <stdlib.h>
 
+#include "ecs/components/controller.h"
+#include "ecs/components/target.h"
 #include "ecs/components/position.h"
+#include "ecs/components/velocity.h"
+#include "ecs/components/life.h"
 #include "ecs/world.h"
 #include "game.h"
 #include "types.h"
-#include "velocity.h"
 
 typedef struct Game {
     u32 Width;
@@ -29,9 +20,6 @@ typedef struct Game {
     SDL_Renderer* Renderer;
     SDL_Surface* ScreenSurface;
     World* World;
-    // TODO: consider the fact that both Game and World manipulate player state
-    Position* PlayerPosition;
-    Velocity* PlayerVelocity;
 } Game;
 
 Game* Game_create(void) {
@@ -68,7 +56,11 @@ Game* Game_create(void) {
         return game;
     }
 
-    game->Renderer = SDL_CreateRenderer(game->Window, -1, SDL_RENDERER_ACCELERATED);
+    game->Renderer = SDL_CreateRenderer(
+            game->Window,
+            -1,
+            SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+
     if (!game->Renderer) {
         printf("Renderer could not be created. SDL_Error: %s\n", SDL_GetError());
         return game;
@@ -78,14 +70,14 @@ Game* Game_create(void) {
 
     game->World = World_create(game->Renderer, 100);
 
-    // first entity = 0 is player
-    game->PlayerPosition = calloc(sizeof(Position), 1);
-    game->PlayerPosition->X = game->Width / 2.0;
-    game->PlayerPosition->Y = game->Height / 2.0;
+    Controller* playerController = calloc(sizeof(Controller), 1);
+    Position* playerPosition = calloc(sizeof(Position), 1);
+    playerPosition->X = game->Width / 2.0;
+    playerPosition->Y = game->Height / 2.0;
 
-    game->PlayerVelocity = calloc(sizeof(Velocity), 1);
+    Velocity* playerVelocity = calloc(sizeof(Velocity), 1);
 
-    World_add_entity(game->World, game->PlayerPosition, game->PlayerVelocity, NULL);
+    World_add_entity(game->World, playerController, NULL, playerPosition, playerVelocity, NULL);
 
     for (usize i = 1; i < 10; i++) {
         f32 rx = rand() / (f32)RAND_MAX;
@@ -94,11 +86,12 @@ Game* Game_create(void) {
         position->X = rx * game->Width;
         position->Y = ry * game->Height;
 
-        f32 rv = rand() / (f32)RAND_MAX;
         Velocity* velocity = calloc(sizeof(Velocity), 1);
-        velocity->X = velocity->Y = 1;
 
-        World_add_entity(game->World, position, velocity, NULL);
+        Target* target = calloc(sizeof(Target), 1);
+        target->Position = playerPosition;
+
+        World_add_entity(game->World, NULL, target, position, velocity, NULL);
     }
 
     return game;
@@ -150,6 +143,9 @@ void Game_loop(Game* game) {
     SDL_Event e;
     bool quit = false;
 
+    f32 targetFps = 60;
+    f64 targetFrameTime = 1000.0 / targetFps;
+
     while (!quit) {
         u64 frameStart = SDL_GetTicks64();
 
@@ -166,31 +162,13 @@ void Game_loop(Game* game) {
         SDL_SetRenderDrawColor(game->Renderer, 0, 0, 0, 0);
         SDL_RenderClear(game->Renderer);
 
-        // handle player movement
-        const u8* keyboardState = SDL_GetKeyboardState(NULL);
-        game->PlayerVelocity->X = 0;
-        game->PlayerVelocity->Y = 0;
-        if (keyboardState[SDL_SCANCODE_UP]) {
-            game->PlayerVelocity->Y += -1;
-        }
-        if (keyboardState[SDL_SCANCODE_DOWN]) {
-            game->PlayerVelocity->Y += 1;
-        }
-        if (keyboardState[SDL_SCANCODE_LEFT]) {
-            game->PlayerVelocity->X += -1;
-        }
-        if (keyboardState[SDL_SCANCODE_RIGHT]) {
-            game->PlayerVelocity->X += 1;
-        }
-
-        World_update(game->World, 1);
+        World_update(game->World);
 
         SDL_RenderPresent(game->Renderer);
 
         u64 loopTime = SDL_GetTicks64() - frameStart;
-        f32 loopFps = (loopTime > 0) ? 1000.0L / loopTime : 0.0;
-        f32 targetFps = 60;
-        f64 targetFrameTime = 1000.0L / targetFps;
+        f32 loopFps = (loopTime > 0) ? 1000.0 / loopTime : 0.0;
+
         f64 delay = targetFrameTime - (SDL_GetTicks64() - frameStart);
         if (delay > 0) {
             SDL_Delay(delay);
@@ -198,7 +176,7 @@ void Game_loop(Game* game) {
 
         u64 delayedFrameTime = SDL_GetTicks64() - frameStart;
         f32 realFps = (delayedFrameTime > 0) ? 1000.0L / delayedFrameTime : 0.0;
-        // printf("target frame time: %f, real fps: %f, frame time: %lu, loop fps: %f\n", targetFrameTime, realFps, loopTime, loopFps);
+        // printf("target frame time: %f, real fps: %f, loop time: %lu, loop fps: %f\n", targetFrameTime, realFps, loopTime, loopFps);
     }
 }
 

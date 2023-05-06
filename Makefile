@@ -1,5 +1,7 @@
 TARGET_EXEC ?= tunel-survivors
 
+CC = clang
+
 BUILD_DIR ?= ./build
 SRC_DIRS ?= ./src
 
@@ -35,6 +37,11 @@ $(BUILD_DIR)/%.cpp.o: %.cpp
 
 clean:
 	$(RM) -r $(BUILD_DIR)
+
+.PHONY: bear
+
+bear:
+	make clean; bear -- make
 
 -include $(DEPS)
 
