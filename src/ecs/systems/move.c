@@ -2,9 +2,9 @@
 #include <stdio.h>
 
 #include "../components/position.h"
+#include "../components/velocity.h"
+#include "direction.h"
 #include "move.h"
-#include "types.h"
-#include "velocity.h"
 
 void Move(Position* position, Velocity* velocity) {
     if (!position || !velocity) {

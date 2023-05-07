@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../components/position.h"
 #include "../components/target.h"
 #include "../components/velocity.h"
 
-void Aim(Position* position, Target* target);
+void FaceTarget(Target* target, Velocity* velocity);

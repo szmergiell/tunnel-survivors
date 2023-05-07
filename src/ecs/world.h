@@ -6,6 +6,7 @@
 #include "components/position.h"
 #include "components/life.h"
 #include "controller.h"
+#include "direction.h"
 #include "target.h"
 #include "velocity.h"
 

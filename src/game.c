@@ -1,9 +1,11 @@
+#include <SDL2/SDL_timer.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 #include <stdlib.h>
 
+#include "direction.h"
 #include "ecs/components/controller.h"
 #include "ecs/components/target.h"
 #include "ecs/components/position.h"
@@ -20,7 +22,41 @@ typedef struct Game {
     SDL_Renderer* Renderer;
     SDL_Surface* ScreenSurface;
     World* World;
+    // TODO: refactor this
+    Position* PlayerPosition;
 } Game;
+
+void SpawnEnemy(Game* game, Position* playerPosition) {
+        f32 rx = rand() / (f32)RAND_MAX;
+        f32 ry = rand() / (f32)RAND_MAX;
+        Position* position = calloc(sizeof(Position), 1);
+        f32 ri = rand() / (f32)RAND_MAX;
+        if (ri <= 0.25) {
+            position->X = game->Width * rx;
+            position->Y = 0;
+        } else if (ri <= 0.50) {
+            position->X = game->Width;
+            position->Y = game->Height * ry;
+        } else if (ri <= 0.75) {
+            position->X = game->Width * rx;
+            position->Y = game->Height;
+        } else if (ri <= 1.00) {
+            position->X = 0;
+            position->Y = game->Height * ry;
+        }
+
+        Velocity* velocity = calloc(sizeof(Velocity), 1);
+
+        Target* target = calloc(sizeof(Target), 1);
+        // TODO: hard-coded player entity ID
+        target->TargetId = 0;
+        target->Position = playerPosition;
+        target->Direction = calloc(sizeof(Direction), 1);
+        Life* life = calloc(sizeof(Life), 1);
+        life->Health = 180;
+
+        World_add_entity(game->World, NULL, target, position, velocity, life);
+}
 
 Game* Game_create(void) {
     Game* game = calloc(sizeof(Game), 1);
@@ -74,24 +110,17 @@ Game* Game_create(void) {
     Position* playerPosition = calloc(sizeof(Position), 1);
     playerPosition->X = game->Width / 2.0;
     playerPosition->Y = game->Height / 2.0;
+    game->PlayerPosition = playerPosition;
 
     Velocity* playerVelocity = calloc(sizeof(Velocity), 1);
+    Target* playerTarget = calloc(sizeof(Target), 1);
+    Life* playerLife = calloc(sizeof(Life), 1);
+    playerLife->Health = 180;
 
-    World_add_entity(game->World, playerController, NULL, playerPosition, playerVelocity, NULL);
+    World_add_entity(game->World, playerController, playerTarget, playerPosition, playerVelocity, playerLife);
 
     for (usize i = 1; i < 10; i++) {
-        f32 rx = rand() / (f32)RAND_MAX;
-        f32 ry = rand() / (f32)RAND_MAX;
-        Position* position = calloc(sizeof(Position), 1);
-        position->X = rx * game->Width;
-        position->Y = ry * game->Height;
-
-        Velocity* velocity = calloc(sizeof(Velocity), 1);
-
-        Target* target = calloc(sizeof(Target), 1);
-        target->Position = playerPosition;
-
-        World_add_entity(game->World, NULL, target, position, velocity, NULL);
+        SpawnEnemy(game, playerPosition);
     }
 
     return game;
@@ -146,6 +175,8 @@ void Game_loop(Game* game) {
     f32 targetFps = 60;
     f64 targetFrameTime = 1000.0 / targetFps;
 
+    u64 lastEnemySpawnTime = SDL_GetTicks64();
+
     while (!quit) {
         u64 frameStart = SDL_GetTicks64();
 
@@ -157,6 +188,11 @@ void Game_loop(Game* game) {
                 e.key.keysym.sym == SDLK_ESCAPE) {
                 quit = true;
             }
+        }
+
+        if (frameStart - lastEnemySpawnTime > 5000) {
+            lastEnemySpawnTime = frameStart;
+            SpawnEnemy(game, game->PlayerPosition);
         }
 
         SDL_SetRenderDrawColor(game->Renderer, 0, 0, 0, 0);

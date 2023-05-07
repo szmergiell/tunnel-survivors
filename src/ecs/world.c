@@ -7,8 +7,12 @@
 #include "components/life.h"
 #include "components/controller.h"
 #include "components/velocity.h"
-#include "systems/control.h"
+#include "direction.h"
+#include "systems/chooseTarget.h"
 #include "systems/aim.h"
+#include "systems/faceTarget.h"
+#include "systems/control.h"
+#include "systems/attack.h"
 #include "systems/draw.h"
 #include "systems/move.h"
 #include "types.h"
@@ -47,7 +51,7 @@ bool World_add_entity(
         Velocity* velocity,
         Life* life) {
     if (world->Count == world->Capacity) {
-        printf("World reached its' capacity: %zu", world->Capacity);
+        printf("World reached its' capacity: %zu\n", world->Capacity);
         return false;
     }
 
@@ -66,10 +70,23 @@ bool World_add_entity(
 
 void World_update(World* world) {
     for (usize i = 0; i < world->Capacity; i++) {
+        // TODO: controller component is a being used as a proxy / tag
+        // for identitfying player entity..
+        ChooseTarget(i, world->Controllers[i], world->Targets[i], world->Positions, world->Capacity);
+        Aim(world->Positions[i], world->Targets[i]);
+        FaceTarget(world->Targets[i], world->Velocities[i]);
         Control(world->Controllers[i], world->Velocities[i]);
-        Aim(world->Positions[i], world->Targets[i], world->Velocities[i]);
         Move(world->Positions[i], world->Velocities[i]);
-        Draw(world->renderer, world->Positions[i]);
+        Attack(world->Targets[i], world->Lives);
+        if (world->Lives[i] && world->Lives[i]->Health == 0) {
+            world->Controllers[i] = NULL;
+            world->Targets[i] = NULL;
+            world->Positions[i] = NULL;
+            world->Velocities[i] = NULL;
+            world->Lives[i] = NULL;
+            continue;
+        }
+        Draw(world->renderer, world->Positions[i], world->Lives[i]);
     }
 }
 
@@ -77,6 +94,12 @@ void World_destroy(World *world) {
     for (usize i = 0; i < world->Capacity; i++) {
         free(world->Controllers[i]);
         world->Controllers[i] = NULL;
+
+        // free(world->Targets[i]->Position);
+        // world->Targets[i]->Position = NULL;
+
+        // free(world->Targets[i]->Direction);
+        // world->Targets[i]->Direction = NULL;
 
         free(world->Targets[i]);
         world->Targets[i] = NULL;

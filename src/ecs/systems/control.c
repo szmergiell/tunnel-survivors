@@ -4,6 +4,7 @@
 
 #include "../components/controller.h"
 #include "../components/velocity.h"
+#include "direction.h"
 #include "types.h"
 #include "control.h"
 
@@ -37,8 +38,4 @@ void Control(Controller* controller, Velocity* velocity) {
         keyboardState[SDL_SCANCODE_L]) {
         velocity->X += 1;
     }
-
-    f32 maginitude = 1.5;
-    velocity->X *= maginitude;
-    velocity->Y *= maginitude;
 }

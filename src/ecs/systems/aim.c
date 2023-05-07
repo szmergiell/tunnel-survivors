@@ -1,21 +1,22 @@
+#include <math.h>
+
 #include "../components/position.h"
 #include "../components/target.h"
 #include "../components/velocity.h"
-#include <math.h>
+#include "../components/direction.h"
+#include "aim.h"
 
-void Aim(Position* position, Target* target, Velocity* velocity) {
-    if (!position || !target || !target->Position || !velocity) {
+void Aim(Position* position, Target* target) {
+    if (!position || !target || !target->Position || !target->Direction) {
         return;
     }
 
-    f32 directionX = target->Position->X - position->X;
-    f32 directionY = target->Position->Y - position->Y;
-    f32 magnitude = sqrtf(directionX * directionX + directionY * directionY);
-    if (magnitude) {
-        directionX /= magnitude;
-        directionY /= magnitude;
+    target->Direction->X = target->Position->X - position->X;
+    target->Direction->Y = target->Position->Y - position->Y;
+    target->Distance = sqrtf(target->Direction->X * target->Direction->X +
+                             target->Direction->Y * target->Direction->Y);
+    if (target->Distance) {
+        target->Direction->X /= target->Distance;
+        target->Direction->Y /= target->Distance;
     }
-
-    velocity->X = directionX;
-    velocity->Y = directionY;
 }
