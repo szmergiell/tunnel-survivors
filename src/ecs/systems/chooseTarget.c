@@ -18,16 +18,16 @@ void ChooseTarget(
     }
 
     usize closestEnemyId = entityId;
-    f32 closestEnemyDistance = FLT_MAX;
+    f64 closestEnemyDistance = DBL_MAX;
     Position playerPosition = *positions[entityId];
     for (usize i = 0; i < positionsCount; i++) {
         if (i == entityId || !positions[i]) {
             continue;
         }
 
-        f32 distanceX = positions[i]->X - playerPosition.X;
-        f32 distanceY = positions[i]->Y - playerPosition.Y;
-        f32 distance = distanceX * distanceX + distanceY * distanceY;
+        f64 distanceX = positions[i]->X - playerPosition.X;
+        f64 distanceY = positions[i]->Y - playerPosition.Y;
+        f64 distance = distanceX * distanceX + distanceY * distanceY;
         if (distance < closestEnemyDistance) {
             closestEnemyDistance = distance;
             closestEnemyId = i;
@@ -41,5 +41,5 @@ void ChooseTarget(
     // printf("Enemy entity ID: %zu\n", closestEnemyId);
     target->TargetId = closestEnemyId;
     target->Position = positions[closestEnemyId];
-    target->Distance = sqrtf(closestEnemyDistance);
+    target->Distance = sqrt(closestEnemyDistance);
 }

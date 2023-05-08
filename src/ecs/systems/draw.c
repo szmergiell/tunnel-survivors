@@ -16,7 +16,7 @@ void Draw(SDL_Renderer* renderer, Position* position, Life* life) {
         .h = 10
     };
 
-    u8 red = life ? (life->Health / 180.0) * 255 : 255;
+    u8 red = life ? (life->Health / life->MaxHealth) * 255 : 255;
     SDL_SetRenderDrawColor(renderer, 255, red, red, 255);
     SDL_RenderFillRectF(renderer, &rectangle);
 }

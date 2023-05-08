@@ -6,12 +6,12 @@
 #include "direction.h"
 #include "move.h"
 
-void Move(Position* position, Velocity* velocity) {
+void Move(Position* position, Velocity* velocity, f64 dt) {
     if (!position || !velocity) {
         return;
     }
 
-    position->X += velocity->X;
-    position->Y += velocity->Y;
+    position->X += velocity->X * dt;
+    position->Y += velocity->Y * dt;
 }
 

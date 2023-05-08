@@ -3,6 +3,6 @@
 #include "../../types.h"
 
 typedef struct Direction {
-    f32 X;
-    f32 Y;
+    f64 X;
+    f64 Y;
 } Direction;

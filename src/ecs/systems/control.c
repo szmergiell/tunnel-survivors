@@ -38,4 +38,12 @@ void Control(Controller* controller, Velocity* velocity) {
         keyboardState[SDL_SCANCODE_L]) {
         velocity->X += 1;
     }
+
+    f64 speed = 115;
+
+    f64 currentLength = sqrt(velocity->X * velocity->X + velocity->Y * velocity->Y);
+    if (currentLength) {
+        velocity->X = velocity->X * speed / currentLength;
+        velocity->Y = velocity->Y * speed / currentLength;
+    }
 }

@@ -51,7 +51,7 @@ bool World_add_entity(
         Velocity* velocity,
         Life* life) {
     if (world->Count == world->Capacity) {
-        printf("World reached its' capacity: %zu\n", world->Capacity);
+        // printf("World reached its' capacity: %zu\n", world->Capacity);
         return false;
     }
 
@@ -68,7 +68,7 @@ bool World_add_entity(
     return true;
 }
 
-void World_update(World* world) {
+void World_update(World* world, f64 dt) {
     for (usize i = 0; i < world->Capacity; i++) {
         // TODO: controller component is a being used as a proxy / tag
         // for identitfying player entity..
@@ -76,9 +76,9 @@ void World_update(World* world) {
         Aim(world->Positions[i], world->Targets[i]);
         FaceTarget(world->Targets[i], world->Velocities[i]);
         Control(world->Controllers[i], world->Velocities[i]);
-        Move(world->Positions[i], world->Velocities[i]);
-        Attack(world->Targets[i], world->Lives);
-        if (world->Lives[i] && world->Lives[i]->Health == 0) {
+        Move(world->Positions[i], world->Velocities[i], dt);
+        Attack(world->Targets[i], world->Lives, dt);
+        if (world->Lives[i] && world->Lives[i]->Health < 0) {
             world->Controllers[i] = NULL;
             world->Targets[i] = NULL;
             world->Positions[i] = NULL;

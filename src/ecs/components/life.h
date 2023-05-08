@@ -3,5 +3,6 @@
 #include "../../types.h"
 
 typedef struct Life {
-    u8 Health;
+    f64 MaxHealth;
+    f64 Health;
 } Life;

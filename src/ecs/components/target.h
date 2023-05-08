@@ -8,5 +8,5 @@ typedef struct Target {
     usize TargetId;
     Position* Position;
     Direction* Direction;
-    f32 Distance;
+    f64 Distance;
 } Target;

@@ -1,4 +1,5 @@
 #include <SDL2/SDL_timer.h>
+#include <math.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -27,10 +28,10 @@ typedef struct Game {
 } Game;
 
 void SpawnEnemy(Game* game, Position* playerPosition) {
-        f32 rx = rand() / (f32)RAND_MAX;
-        f32 ry = rand() / (f32)RAND_MAX;
+        f64 rx = rand() / (f64)RAND_MAX;
+        f64 ry = rand() / (f64)RAND_MAX;
         Position* position = calloc(sizeof(Position), 1);
-        f32 ri = rand() / (f32)RAND_MAX;
+        f64 ri = rand() / (f64)RAND_MAX;
         if (ri <= 0.25) {
             position->X = game->Width * rx;
             position->Y = 0;
@@ -53,7 +54,8 @@ void SpawnEnemy(Game* game, Position* playerPosition) {
         target->Position = playerPosition;
         target->Direction = calloc(sizeof(Direction), 1);
         Life* life = calloc(sizeof(Life), 1);
-        life->Health = 180;
+        life->MaxHealth = 3.0;
+        life->Health = 3.0;
 
         World_add_entity(game->World, NULL, target, position, velocity, life);
 }
@@ -115,7 +117,8 @@ Game* Game_create(void) {
     Velocity* playerVelocity = calloc(sizeof(Velocity), 1);
     Target* playerTarget = calloc(sizeof(Target), 1);
     Life* playerLife = calloc(sizeof(Life), 1);
-    playerLife->Health = 180;
+    playerLife->MaxHealth = 3.0;
+    playerLife->Health = 3.0;
 
     World_add_entity(game->World, playerController, playerTarget, playerPosition, playerVelocity, playerLife);
 
@@ -172,13 +175,14 @@ void Game_loop(Game* game) {
     SDL_Event e;
     bool quit = false;
 
-    f32 targetFps = 60;
-    f64 targetFrameTime = 1000.0 / targetFps;
+    f64 targetFps = 60;
+    f64 targetFrameTime = 1.0 / targetFps;
 
-    u64 lastEnemySpawnTime = SDL_GetTicks64();
+    u64 lastEnemySpawnTime = SDL_GetPerformanceCounter();
+    u64 lastSimulationTime = SDL_GetPerformanceCounter();
 
     while (!quit) {
-        u64 frameStart = SDL_GetTicks64();
+        u64 frameStart = SDL_GetPerformanceCounter();
 
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) {
@@ -190,7 +194,7 @@ void Game_loop(Game* game) {
             }
         }
 
-        if (frameStart - lastEnemySpawnTime > 5000) {
+        if ((frameStart - lastEnemySpawnTime) / (f64)SDL_GetPerformanceFrequency() > 5) {
             lastEnemySpawnTime = frameStart;
             SpawnEnemy(game, game->PlayerPosition);
         }
@@ -198,21 +202,24 @@ void Game_loop(Game* game) {
         SDL_SetRenderDrawColor(game->Renderer, 0, 0, 0, 0);
         SDL_RenderClear(game->Renderer);
 
-        World_update(game->World);
+        u64 currentSimulationTime = SDL_GetPerformanceCounter();
+        f64 dt = (currentSimulationTime - lastSimulationTime) / (f64)SDL_GetPerformanceFrequency();
+        World_update(game->World, dt);
+        lastSimulationTime = currentSimulationTime;
 
         SDL_RenderPresent(game->Renderer);
 
-        u64 loopTime = SDL_GetTicks64() - frameStart;
-        f32 loopFps = (loopTime > 0) ? 1000.0 / loopTime : 0.0;
+        f64 loopTime = (SDL_GetPerformanceCounter() - frameStart) / (f64)SDL_GetPerformanceFrequency();
+        f64 loopFps = (loopTime > 0) ? 1.0 / loopTime : 0.0;
 
-        f64 delay = targetFrameTime - (SDL_GetTicks64() - frameStart);
+        f64 delay = targetFrameTime - loopTime;
         if (delay > 0) {
-            SDL_Delay(delay);
+            SDL_Delay(floor(delay * 1000));
         }
 
-        u64 delayedFrameTime = SDL_GetTicks64() - frameStart;
-        f32 realFps = (delayedFrameTime > 0) ? 1000.0L / delayedFrameTime : 0.0;
-        // printf("target frame time: %f, real fps: %f, loop time: %lu, loop fps: %f\n", targetFrameTime, realFps, loopTime, loopFps);
+        f64 delayedFrameTime = (SDL_GetPerformanceCounter() - frameStart) / (f64)SDL_GetPerformanceFrequency();
+        f64 realFps = (delayedFrameTime > 0) ? 1.0 / delayedFrameTime : 0.0;
+        // printf("target frame time: %f, real fps: %f, loop time: %f, loop fps: %f\n", targetFrameTime, realFps, loopTime, loopFps);
     }
 }
 

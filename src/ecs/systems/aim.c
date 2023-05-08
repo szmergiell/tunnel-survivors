@@ -13,8 +13,8 @@ void Aim(Position* position, Target* target) {
 
     target->Direction->X = target->Position->X - position->X;
     target->Direction->Y = target->Position->Y - position->Y;
-    target->Distance = sqrtf(target->Direction->X * target->Direction->X +
-                             target->Direction->Y * target->Direction->Y);
+    target->Distance = sqrt(target->Direction->X * target->Direction->X +
+                            target->Direction->Y * target->Direction->Y);
     if (target->Distance) {
         target->Direction->X /= target->Distance;
         target->Direction->Y /= target->Distance;

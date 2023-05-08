@@ -22,6 +22,6 @@ bool World_add_entity(
     Velocity* velocity,
     Life* life);
 
-void World_update(World* world);
+void World_update(World* world, f64 dt);
 
 void World_destroy(World* world);
