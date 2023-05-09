@@ -1,3 +1,5 @@
+#include <SDL2/SDL_rect.h>
+#include <SDL2/SDL_render.h>
 #include <SDL2/SDL_timer.h>
 #include <math.h>
 #include <stdbool.h>
@@ -25,6 +27,8 @@ typedef struct Game {
     World* World;
     // TODO: refactor this
     Position* PlayerPosition;
+    Velocity* PlayerVelocity;
+    SDL_Texture* Background;
 } Game;
 
 void SpawnEnemy(Game* game, Position* playerPosition) {
@@ -58,6 +62,16 @@ void SpawnEnemy(Game* game, Position* playerPosition) {
         life->Health = 3.0;
 
         World_add_entity(game->World, NULL, target, position, velocity, life);
+}
+
+SDL_Texture* Game_load_texture(SDL_Renderer* renderer, const char* path) {
+    SDL_Texture* texture = IMG_LoadTexture(renderer, path);
+    if (!texture) {
+        printf("Unable to create texutre from %s. IMG_Error: %s\n", path, IMG_GetError());
+        return NULL;
+    }
+
+    return texture;
 }
 
 Game* Game_create(void) {
@@ -104,6 +118,8 @@ Game* Game_create(void) {
         return game;
     }
 
+    game->Background = Game_load_texture(game->Renderer, "assets/background.jpg");
+
     game->ScreenSurface = SDL_GetWindowSurface(game->Window);
 
     game->World = World_create(game->Renderer, 100);
@@ -115,7 +131,10 @@ Game* Game_create(void) {
     game->PlayerPosition = playerPosition;
 
     Velocity* playerVelocity = calloc(sizeof(Velocity), 1);
+    game->PlayerVelocity = playerVelocity;
+
     Target* playerTarget = calloc(sizeof(Target), 1);
+
     Life* playerLife = calloc(sizeof(Life), 1);
     playerLife->MaxHealth = 3.0;
     playerLife->Health = 3.0;
@@ -147,28 +166,31 @@ SDL_Surface* Game_load_image(SDL_Surface* screenSurface, const char* path) {
     return optimizedSurface;
 }
 
-SDL_Texture* Game_load_texture(SDL_Renderer* renderer, const char* path) {
-    SDL_Texture* texture = IMG_LoadTexture(renderer, path);
-    if (!texture) {
-        printf("Unable to create texutre from %s. IMG_Error: %s\n", path, IMG_GetError());
-        return NULL;
+void Game_render_background(Game* game, f64 dt) {
+    static SDL_Rect textureRectangle = {
+        .w = 1920,
+        .h = 1080,
+        .x = 1920,
+        .y = 1080,
+    };
+    textureRectangle.x += (i32)(game->PlayerVelocity->X * dt);
+    if (textureRectangle.x <= 0) {
+        textureRectangle.x = 1920;
+    }
+    if (textureRectangle.x >= 2 * 1920) {
+        textureRectangle.x = 1920;
+    }
+    textureRectangle.y += (i32)(game->PlayerVelocity->Y * dt);
+    if (textureRectangle.y <= 0) {
+        textureRectangle.y = 1080;
+    }
+    if (textureRectangle.y >= 2 * 1080) {
+        textureRectangle.y = 1080;
     }
 
-    return texture;
-}
+    // printf("world velocity: %d %d\n", (i32)(game->PlayerVelocity->X * dt), (int)(game->PlayerVelocity->Y * dt));
 
-void Game_display_full_screen_surface(Game* game, SDL_Surface* surface) {
-    SDL_Rect stretchRect;
-    stretchRect.w = game->Width;
-    stretchRect.h = game->Height;
-    SDL_BlitScaled(surface, NULL, game->ScreenSurface, &stretchRect);
-    SDL_UpdateWindowSurface(game->Window);
-}
-
-void Game_display_texture(SDL_Renderer* renderer, SDL_Texture* texture) {
-    SDL_RenderClear(renderer);
-    SDL_RenderCopy(renderer, texture, NULL, NULL);
-    SDL_RenderPresent(renderer);
+    SDL_RenderCopy(game->Renderer, game->Background, &textureRectangle, NULL);
 }
 
 void Game_loop(Game* game) {
@@ -204,7 +226,10 @@ void Game_loop(Game* game) {
 
         u64 currentSimulationTime = SDL_GetPerformanceCounter();
         f64 dt = (currentSimulationTime - lastSimulationTime) / (f64)SDL_GetPerformanceFrequency();
+
+        Game_render_background(game, dt);
         World_update(game->World, dt);
+
         lastSimulationTime = currentSimulationTime;
 
         SDL_RenderPresent(game->Renderer);

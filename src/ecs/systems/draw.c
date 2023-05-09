@@ -9,11 +9,13 @@ void Draw(SDL_Renderer* renderer, Position* position, Life* life) {
         return;
     }
 
+    f32 size = 10;
+
     SDL_FRect rectangle = {
-        .x = position->X,
-        .y = position->Y,
-        .w = 10,
-        .h = 10
+        .x = position->X - size / 2,
+        .y = position->Y - size / 2,
+        .w = size,
+        .h = size,
     };
 
     u8 red = life ? (life->Health / life->MaxHealth) * 255 : 255;

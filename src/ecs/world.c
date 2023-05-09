@@ -73,10 +73,12 @@ void World_update(World* world, f64 dt) {
         // TODO: controller component is a being used as a proxy / tag
         // for identitfying player entity..
         ChooseTarget(i, world->Controllers[i], world->Targets[i], world->Positions, world->Capacity);
-        Aim(world->Positions[i], world->Targets[i]);
+        Aim(world->Positions[i], world->Targets[i], world->Velocities[0], dt);
         FaceTarget(world->Targets[i], world->Velocities[i]);
         Control(world->Controllers[i], world->Velocities[i]);
-        Move(world->Positions[i], world->Velocities[i], dt);
+        if (i != 0) {
+            Move(world->Positions[i], world->Velocities[i], world->Velocities[0], dt);
+        }
         Attack(world->Targets[i], world->Lives, dt);
         if (world->Lives[i] && world->Lives[i]->Health < 0) {
             world->Controllers[i] = NULL;
