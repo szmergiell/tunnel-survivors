@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_render.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -8,6 +9,8 @@
 #include "components/controller.h"
 #include "components/velocity.h"
 #include "direction.h"
+#include "game.h"
+#include "moveWorld.h"
 #include "systems/chooseTarget.h"
 #include "systems/aim.h"
 #include "systems/faceTarget.h"
@@ -26,6 +29,7 @@ typedef struct World {
     Position** Positions;
     Life** Lives;
     Velocity** Velocities;
+    SDL_Texture** Textures;
     SDL_Renderer* renderer;
 } World;
 
@@ -38,6 +42,7 @@ World* World_create(SDL_Renderer* renderer, usize capacity) {
     world->Positions = calloc(sizeof(Position*), capacity);
     world->Velocities = calloc(sizeof(Velocity*), capacity);
     world->Lives = calloc(sizeof(Life*), capacity);
+    world->Textures = calloc(sizeof(SDL_Texture*), capacity);
     world->renderer = renderer;
 
     return world;
@@ -49,7 +54,8 @@ bool World_add_entity(
         Target* target,
         Position* position,
         Velocity* velocity,
-        Life* life) {
+        Life* life,
+        SDL_Texture* texture) {
     if (world->Count == world->Capacity) {
         // printf("World reached its' capacity: %zu\n", world->Capacity);
         return false;
@@ -63,6 +69,7 @@ bool World_add_entity(
     world->Positions[world->Count] = position;
     world->Velocities[world->Count] = velocity;
     world->Lives[world->Count] = life;
+    world->Textures[world->Count] = texture;
     world->Count++;
 
     return true;
@@ -72,14 +79,17 @@ void World_update(World* world, f64 dt) {
     for (usize i = 0; i < world->Capacity; i++) {
         // TODO: controller component is a being used as a proxy / tag
         // for identitfying player entity..
+        if (i != 0) {
+            MoveWorld(world->Positions[i], world->Velocities[0], dt);
+        }
         ChooseTarget(i, world->Controllers[i], world->Targets[i], world->Positions, world->Capacity);
-        Aim(world->Positions[i], world->Targets[i], world->Velocities[0], dt);
+        Aim(world->Positions[i], world->Targets[i]);
         FaceTarget(world->Targets[i], world->Velocities[i]);
         Control(world->Controllers[i], world->Velocities[i]);
-        if (i != 0) {
-            Move(world->Positions[i], world->Velocities[i], world->Velocities[0], dt);
-        }
         Attack(world->Targets[i], world->Lives, dt);
+        if (i != 0) {
+            Move(world->Positions[i], world->Velocities[i], dt);
+        }
         if (world->Lives[i] && world->Lives[i]->Health < 0) {
             world->Controllers[i] = NULL;
             world->Targets[i] = NULL;
@@ -88,7 +98,7 @@ void World_update(World* world, f64 dt) {
             world->Lives[i] = NULL;
             continue;
         }
-        Draw(world->renderer, world->Positions[i], world->Lives[i]);
+        Draw(world->renderer, world->Positions[i], world->Lives[i], world->Textures[i]);
     }
 }
 
@@ -114,6 +124,9 @@ void World_destroy(World *world) {
 
         free(world->Lives[i]);
         world->Lives[i] = NULL;
+
+        // free(world->Textures[i]);
+        // world->Textures[i] = NULL;
     }
 
     free(world->Controllers);
@@ -130,6 +143,9 @@ void World_destroy(World *world) {
 
     free(world->Lives);
     world->Lives = NULL;
+
+    free(world->Textures);
+    world->Textures = NULL;
 
     free(world);
     world = NULL;

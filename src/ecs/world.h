@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SDL2/SDL_render.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 
@@ -20,7 +21,8 @@ bool World_add_entity(
     Target* target,
     Position* position,
     Velocity* velocity,
-    Life* life);
+    Life* life,
+    SDL_Texture* texture);
 
 void World_update(World* world, f64 dt);
 

@@ -5,11 +5,11 @@
 #include "game.h"
 
 int main(int argc, char* args[]) {
-    Game* game = Game_create();
+    Game* Game = Game_create();
 
-    Game_loop(game);
+    Game_loop(Game);
 
-    Game_destroy(game);
+    Game_destroy(Game);
 
     return 0;
 }

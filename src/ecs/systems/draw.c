@@ -1,24 +1,27 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_render.h>
 
 #include "draw.h"
 #include "../components/position.h"
 #include "../components/life.h"
 
-void Draw(SDL_Renderer* renderer, Position* position, Life* life) {
+void Draw(SDL_Renderer* renderer, Position* position, Life* life, SDL_Texture* texture) {
     if (!renderer || !position) {
         return;
     }
 
-    f32 size = 10;
-
-    SDL_FRect rectangle = {
-        .x = position->X - size / 2,
-        .y = position->Y - size / 2,
-        .w = size,
-        .h = size,
+    SDL_Rect rectangle = {
+        .x = position->X - (100 / 2),
+        .y = position->Y - (200 / 2),
+        .w = 100,
+        .h = 200,
     };
 
-    u8 red = life ? (life->Health / life->MaxHealth) * 255 : 255;
-    SDL_SetRenderDrawColor(renderer, 255, red, red, 255);
-    SDL_RenderFillRectF(renderer, &rectangle);
+    if (texture) {
+        SDL_RenderCopy(renderer, texture, NULL, &rectangle);
+    } else {
+        u8 red = life ? (life->Health / life->MaxHealth) * 255 : 255;
+        SDL_SetRenderDrawColor(renderer, 255, red, red, 255);
+        SDL_RenderFillRect(renderer, &rectangle);
+    }
 }

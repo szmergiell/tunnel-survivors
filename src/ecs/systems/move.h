@@ -4,4 +4,4 @@
 #include "direction.h"
 #include "velocity.h"
 
-void Move(Position* position, Velocity* velocity, Velocity* worldVelocity, f64 dt);
+void Move(Position* position, Velocity* velocity, f64 dt);

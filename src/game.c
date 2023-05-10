@@ -29,6 +29,8 @@ typedef struct Game {
     Position* PlayerPosition;
     Velocity* PlayerVelocity;
     SDL_Texture* Background;
+    SDL_Texture* Rama;
+    SDL_Texture* Oni;
 } Game;
 
 void SpawnEnemy(Game* game, Position* playerPosition) {
@@ -61,7 +63,7 @@ void SpawnEnemy(Game* game, Position* playerPosition) {
         life->MaxHealth = 3.0;
         life->Health = 3.0;
 
-        World_add_entity(game->World, NULL, target, position, velocity, life);
+        World_add_entity(game->World, NULL, target, position, velocity, life, game->Oni);
 }
 
 SDL_Texture* Game_load_texture(SDL_Renderer* renderer, const char* path) {
@@ -89,7 +91,7 @@ Game* Game_create(void) {
         return game;
     }
 
-    i32 imageInitFlags = IMG_INIT_JPG;
+    i32 imageInitFlags = IMG_INIT_JPG | IMG_INIT_PNG;
     if (IMG_Init(imageInitFlags) != imageInitFlags) {
         printf("SDL Image could not be initialized. IMG_Error: %s\n", IMG_GetError());
         return game;
@@ -119,6 +121,8 @@ Game* Game_create(void) {
     }
 
     game->Background = Game_load_texture(game->Renderer, "assets/background.jpg");
+    game->Rama = Game_load_texture(game->Renderer, "assets/rama.png");
+    game->Oni = Game_load_texture(game->Renderer, "assets/oni.png");
 
     game->ScreenSurface = SDL_GetWindowSurface(game->Window);
 
@@ -139,7 +143,14 @@ Game* Game_create(void) {
     playerLife->MaxHealth = 3.0;
     playerLife->Health = 3.0;
 
-    World_add_entity(game->World, playerController, playerTarget, playerPosition, playerVelocity, playerLife);
+    World_add_entity(
+        game->World,
+        playerController,
+        playerTarget,
+        playerPosition,
+        playerVelocity,
+        playerLife,
+        game->Rama);
 
     for (usize i = 1; i < 10; i++) {
         SpawnEnemy(game, playerPosition);
