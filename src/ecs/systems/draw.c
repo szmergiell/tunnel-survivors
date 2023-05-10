@@ -17,11 +17,12 @@ void Draw(SDL_Renderer* renderer, Position* position, Life* life, SDL_Texture* t
         .h = 200,
     };
 
+    u8 shade = life ? (life->Health / life->MaxHealth) * 255 : 255;
     if (texture) {
+        SDL_SetTextureColorMod(texture, 255, shade, shade);
         SDL_RenderCopy(renderer, texture, NULL, &rectangle);
     } else {
-        u8 red = life ? (life->Health / life->MaxHealth) * 255 : 255;
-        SDL_SetRenderDrawColor(renderer, 255, red, red, 255);
+        SDL_SetRenderDrawColor(renderer, 255, shade, shade, 255);
         SDL_RenderFillRect(renderer, &rectangle);
     }
 }

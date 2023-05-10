@@ -19,13 +19,14 @@ void ChooseTarget(
 
     usize closestEnemyId = entityId;
     f64 closestEnemyDistance = DBL_MAX;
+    Position playerPosition = *positions[entityId];
     for (usize i = 0; i < positionsCount; i++) {
         if (i == entityId || !positions[i]) {
             continue;
         }
 
-        f64 distanceX = positions[i]->X;
-        f64 distanceY = positions[i]->Y;
+        f64 distanceX = positions[i]->X - playerPosition.X;
+        f64 distanceY = positions[i]->Y - playerPosition.Y;
         f64 distance = distanceX * distanceX + distanceY * distanceY;
         if (distance < closestEnemyDistance) {
             closestEnemyDistance = distance;

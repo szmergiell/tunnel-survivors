@@ -138,6 +138,7 @@ Game* Game_create(void) {
     game->PlayerVelocity = playerVelocity;
 
     Target* playerTarget = calloc(sizeof(Target), 1);
+    playerTarget->Direction = calloc(sizeof(Direction), 1);
 
     Life* playerLife = calloc(sizeof(Life), 1);
     playerLife->MaxHealth = 3.0;
