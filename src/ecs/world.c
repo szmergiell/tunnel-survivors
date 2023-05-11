@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "collide.h"
 #include "components/position.h"
 #include "components/target.h"
 #include "components/life.h"
@@ -79,6 +80,9 @@ void World_update(World* world, f64 dt) {
     for (usize i = 0; i < world->Capacity; i++) {
         // TODO: controller component is a being used as a proxy / tag
         // for identitfying player entity..
+        if (i == 0) {
+            CollidePlayer(i, world->Positions, world->Velocities, world->Capacity, dt);
+        }
         if (i != 0) {
             MoveWorld(world->Positions[i], world->Velocities[0], dt);
         }
@@ -87,6 +91,7 @@ void World_update(World* world, f64 dt) {
         FaceTarget(world->Targets[i], world->Velocities[i]);
         Control(world->Controllers[i], world->Velocities[i]);
         Attack(world->Targets[i], world->Lives, dt);
+        CollideWorld(i, world->Positions, world->Velocities, world->Capacity, dt);
         if (i != 0) {
             Move(world->Positions[i], world->Velocities[i], dt);
         }

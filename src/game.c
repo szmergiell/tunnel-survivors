@@ -37,6 +37,7 @@ void SpawnEnemy(Game* game, Position* playerPosition) {
         f64 rx = rand() / (f64)RAND_MAX;
         f64 ry = rand() / (f64)RAND_MAX;
         Position* position = calloc(sizeof(Position), 1);
+        position->R = 50.0;
         f64 ri = rand() / (f64)RAND_MAX;
         if (ri <= 0.25) {
             position->X = game->Width * rx;
@@ -132,6 +133,7 @@ Game* Game_create(void) {
     Position* playerPosition = calloc(sizeof(Position), 1);
     playerPosition->X = game->Width / 2.0;
     playerPosition->Y = game->Height / 2.0;
+    playerPosition->R = 50.0;
     game->PlayerPosition = playerPosition;
 
     Velocity* playerVelocity = calloc(sizeof(Velocity), 1);
@@ -228,7 +230,7 @@ void Game_loop(Game* game) {
             }
         }
 
-        if ((frameStart - lastEnemySpawnTime) / (f64)SDL_GetPerformanceFrequency() > 5) {
+        if ((frameStart - lastEnemySpawnTime) / (f64)SDL_GetPerformanceFrequency() > 3) {
             lastEnemySpawnTime = frameStart;
             SpawnEnemy(game, game->PlayerPosition);
         }
