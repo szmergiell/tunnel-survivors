@@ -38,7 +38,7 @@ typedef struct World {
     Velocity** Velocities;
     SDL_Texture** Textures;
     SDL_Renderer* renderer;
-    u32 Score;
+    i32 Score;
 } World;
 
 World* World_create(SDL_Renderer* renderer, usize capacity) {
@@ -118,7 +118,10 @@ u32 World_update(World* world, f64 dt) {
         Draw(world->renderer, world->Positions[i], world->Lives[i], world->Textures[i]);
     }
 
-    return 0;
+    // TODO: pass score separately to avoid issue
+    // where game does not end
+    // because user scored 0
+    return -1;
 }
 
 void World_destroy(World *world) {

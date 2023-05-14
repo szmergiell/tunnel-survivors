@@ -25,7 +25,8 @@
 typedef enum GameState {
     Start,
     Loop,
-    End,
+    GameOver,
+    Exit,
     GameStateLength
 } GameState;
 
@@ -45,7 +46,7 @@ typedef struct Game {
     SDL_Texture* Oni;
     GameState State;
     TTF_Font* Font;
-    SDL_Texture* GameOverTexture;
+    SDL_Texture* GameOverTextTexture;
     i32 Score;
 } Game;
 
@@ -205,8 +206,8 @@ Game* Game_create(void) {
         return game;
     }
 
-    game->GameOverTexture = Game_create_text_texture(game, "Game over!");
-    if (!game->GameOverTexture) {
+    game->GameOverTextTexture = Game_create_text_texture(game, "Game over!");
+    if (!game->GameOverTextTexture) {
         return game;
     }
 
@@ -233,9 +234,9 @@ SDL_Surface* Game_load_image(SDL_Surface* screenSurface, const char* path) {
 
 void Game_render_end_screen(Game* game, u32 score) {
     i32 w1, h1;
-    SDL_QueryTexture(game->GameOverTexture, NULL, NULL, &w1, &h1);
+    SDL_QueryTexture(game->GameOverTextTexture, NULL, NULL, &w1, &h1);
     SDL_Rect firstLine = { game->Width / 2 - w1 / 2, game->Height / 2 - h1 / 2 - h1, w1, h1 };
-    SDL_RenderCopy(game->Renderer, game->GameOverTexture, NULL, &firstLine);
+    SDL_RenderCopy(game->Renderer, game->GameOverTextTexture, NULL, &firstLine);
 
     i32 w2, h2;
     char scoreTextBuffer[50];
@@ -293,10 +294,12 @@ void Game_loop(Game* game) {
 
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) {
+                game->State = Exit;
                 quit = true;
             }
             if (e.type == SDL_KEYDOWN &&
                 e.key.keysym.sym == SDLK_ESCAPE) {
+                game->State = Exit;
                 quit = true;
             }
             if (e.type == SDL_KEYDOWN &&
@@ -324,13 +327,16 @@ void Game_loop(Game* game) {
 
             Game_render_background(game, dt);
             game->Score = World_update(game->World, dt);
-            if (game->Score > 0) {
-                game->State = End;
+            if (game->Score >= 0) {
+                game->State = GameOver;
             }
         }
 
-        if (game->State == End) {
+        if (game->State == GameOver) {
             Game_render_end_screen(game, game->Score);
+        }
+
+        if (game->State == Exit) {
         }
 
         lastSimulationTime = currentSimulationTime;
@@ -355,6 +361,21 @@ void Game_destroy(Game* game) {
     World_destroy(game->World);
     game->World = NULL;
 
+    SDL_DestroyTexture(game->StartScreen);
+    game->StartScreen = NULL;
+
+    SDL_DestroyTexture(game->Background);
+    game->Background = NULL;
+
+    SDL_DestroyTexture(game->GameOverTextTexture);
+    game->GameOverTextTexture = NULL;
+
+    SDL_DestroyTexture(game->Oni);
+    game->Oni = NULL;
+
+    SDL_DestroyTexture(game->Rama);
+    game->Rama = NULL;
+
     SDL_DestroyRenderer(game->Renderer);
     game->Renderer = NULL;
 
@@ -362,7 +383,12 @@ void Game_destroy(Game* game) {
     game->Window = NULL;
 
     IMG_Quit();
+
+    TTF_CloseFont(game->Font);
+    game->Font = NULL;
+
     TTF_Quit();
+
     SDL_Quit();
 
     free(game);

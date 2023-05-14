@@ -79,8 +79,8 @@ void CollideWorld(
                 f64 dps = 1;
                 f64 damage = dps * dt;
                 lives[0]->Health -= damage;
-                printf("Attacking enitity ID: %zu with %f damage. Health left: %f\n",
-                        targets[id]->TargetId, damage, lives[targets[id]->TargetId]->Health);
+                // printf("Attacking enitity ID: %zu with %f damage. Health left: %f\n",
+                //         targets[id]->TargetId, damage, lives[targets[id]->TargetId]->Health);
             }
             // resolve (?) conflicts so two objects don't get stuck in dead-lock
             // move enemy that is closer to player
