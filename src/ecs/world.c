@@ -91,7 +91,7 @@ void World_update(World* world, f64 dt) {
         FaceTarget(world->Targets[i], world->Velocities[i]);
         Control(world->Controllers[i], world->Velocities[i]);
         Attack(world->Targets[i], world->Lives, dt);
-        CollideWorld(i, world->Positions, world->Velocities, world->Capacity, dt);
+        CollideWorld(i, world->Positions, world->Velocities, world->Targets, world->Lives, world->Capacity, dt);
         if (i != 0) {
             Move(world->Positions[i], world->Velocities[i], dt);
         }

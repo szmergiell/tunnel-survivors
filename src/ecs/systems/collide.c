@@ -1,9 +1,12 @@
 #include <math.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "../components/position.h"
 #include "direction.h"
+#include "life.h"
 #include "move.h"
+#include "target.h"
 #include "velocity.h"
 #include "collide.h"
 
@@ -44,7 +47,14 @@ void CollidePlayer(usize id, Position** positions, Velocity** velocities, usize 
     }
 }
 
-void CollideWorld(usize id, Position** positions, Velocity** velocities, usize capacity, f64 dt) {
+void CollideWorld(
+        usize id,
+        Position** positions,
+        Velocity** velocities,
+        Target** targets,
+        Life** lives,
+        usize capacity, 
+        f64 dt) {
     if (!positions[id] || !velocities[id]) {
         return;
     }
@@ -67,6 +77,13 @@ void CollideWorld(usize id, Position** positions, Velocity** velocities, usize c
             positions[id]->X += cos(angle) * distanceToMove;
             positions[id]->Y += sin(angle) * distanceToMove;
 
+            if (targets[id]->TargetId == 0 && i == 0) {
+                f64 dps = 1;
+                f64 damage = dps * dt;
+                lives[0]->Health -= damage;
+                printf("Attacking enitity ID: %zu with %f damage. Health left: %f\n",
+                        targets[id]->TargetId, damage, lives[targets[id]->TargetId]->Health);
+            }
             // resolve (?) conflicts so two objects don't get stuck in dead-lock
             if (i != 0) {
                 positions[i]->X += velocities[i]->X * dt;
