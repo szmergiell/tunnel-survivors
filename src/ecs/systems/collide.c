@@ -41,8 +41,8 @@ void CollidePlayer(usize id, Position** positions, Velocity** velocities, usize 
             f64 distance = sqrt(dX * dX + dY * dY);
             f64 sumOfRadii = positions[id]->R + positions[i]->R;
             f64 distanceToMove = sumOfRadii - distance;
-            positions[id]->X += cos(angle) * distanceToMove;
-            positions[id]->Y += sin(angle) * distanceToMove;
+            // positions[id]->X += cos(angle) * distanceToMove;
+            // positions[id]->Y += sin(angle) * distanceToMove;
         }
     }
 }
@@ -64,8 +64,6 @@ void CollideWorld(
             continue;
         }
         if (WillCollide(positions[id], velocities[id], positions[i], dt)) {
-            velocities[id]->X = 0;
-            velocities[id]->Y = 0;
             f64 angle = atan2(positions[id]->Y - positions[i]->Y, positions[id]->X - positions[i]->X);
             f64 newX = positions[id]->X;
             f64 newY = positions[id]->Y;
@@ -74,8 +72,8 @@ void CollideWorld(
             f64 distance = sqrt(dX * dX + dY * dY);
             f64 sumOfRadii = positions[id]->R + positions[i]->R;
             f64 distanceToMove = sumOfRadii - distance;
-            positions[id]->X += cos(angle) * distanceToMove;
-            positions[id]->Y += sin(angle) * distanceToMove;
+            // positions[id]->X += cos(angle) * distanceToMove;
+            // positions[id]->Y += sin(angle) * distanceToMove;
 
             if (targets[id]->TargetId == 0 && i == 0) {
                 f64 dps = 1;
@@ -85,9 +83,17 @@ void CollideWorld(
                         targets[id]->TargetId, damage, lives[targets[id]->TargetId]->Health);
             }
             // resolve (?) conflicts so two objects don't get stuck in dead-lock
-            if (i != 0) {
+            // move enemy that is closer to player
+            if (i != 0 && targets[id]->Distance < targets[i]->Distance) {
+                positions[id]->X += velocities[id]->X * dt;
+                positions[id]->Y += velocities[id]->Y * dt;
+                velocities[id]->X = velocities[i]->X = 0;
+                velocities[id]->Y = velocities[i]->Y = 0;
+            } else {
                 positions[i]->X += velocities[i]->X * dt;
                 positions[i]->Y += velocities[i]->Y * dt;
+                velocities[id]->X = velocities[i]->X = 0;
+                velocities[id]->Y = velocities[i]->Y = 0;
             }
         }
     }

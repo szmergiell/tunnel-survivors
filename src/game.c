@@ -1,11 +1,15 @@
+#include <SDL2/SDL_events.h>
+#include <SDL2/SDL_keycode.h>
 #include <SDL2/SDL_rect.h>
 #include <SDL2/SDL_render.h>
+#include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_timer.h>
 #include <math.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "direction.h"
@@ -18,6 +22,13 @@
 #include "game.h"
 #include "types.h"
 
+typedef enum GameState {
+    Start,
+    Loop,
+    End,
+    GameStateLength
+} GameState;
+
 typedef struct Game {
     u32 Width;
     u32 Height;
@@ -28,9 +39,14 @@ typedef struct Game {
     // TODO: refactor this
     Position* PlayerPosition;
     Velocity* PlayerVelocity;
+    SDL_Texture* StartScreen;
     SDL_Texture* Background;
     SDL_Texture* Rama;
     SDL_Texture* Oni;
+    GameState State;
+    TTF_Font* Font;
+    SDL_Texture* GameOverTexture;
+    i32 Score;
 } Game;
 
 void SpawnEnemy(Game* game, Position* playerPosition) {
@@ -77,6 +93,61 @@ SDL_Texture* Game_load_texture(SDL_Renderer* renderer, const char* path) {
     return texture;
 }
 
+void Game_spawn_world(Game* game) {
+    game->State = Start;
+
+    game->World = World_create(game->Renderer, 100);
+
+    Controller* playerController = calloc(sizeof(Controller), 1);
+    Position* playerPosition = calloc(sizeof(Position), 1);
+    playerPosition->X = game->Width / 2.0;
+    playerPosition->Y = game->Height / 2.0;
+    playerPosition->R = 50.0;
+    game->PlayerPosition = playerPosition;
+
+    Velocity* playerVelocity = calloc(sizeof(Velocity), 1);
+    game->PlayerVelocity = playerVelocity;
+
+    Target* playerTarget = calloc(sizeof(Target), 1);
+    playerTarget->Direction = calloc(sizeof(Direction), 1);
+
+    Life* playerLife = calloc(sizeof(Life), 1);
+    playerLife->MaxHealth = 3.0;
+    playerLife->Health = 3.0;
+
+    World_add_entity(
+            game->World,
+            playerController,
+            playerTarget,
+            playerPosition,
+            playerVelocity,
+            playerLife,
+            game->Rama);
+
+    for (usize i = 1; i < 10; i++) {
+        SpawnEnemy(game, playerPosition);
+    }
+}
+
+SDL_Texture* Game_create_text_texture(Game* game, char* text) {
+    SDL_Color color = { 255, 255, 255 };
+    SDL_Surface* textSurface = TTF_RenderText_Blended(game->Font, text, color);
+    if (!textSurface) {
+        printf("Text '%s' could not be rendered. TTF_Error: %s\n", text, TTF_GetError());
+        return NULL;
+    }
+
+    SDL_Texture* textTexture = SDL_CreateTextureFromSurface(game->Renderer, textSurface);
+    if (!textTexture) {
+        printf("Texture could not be created from text surface. TTF_Error: %s\n", TTF_GetError());
+        return NULL;
+    }
+
+    free(textSurface);
+
+    return textTexture;
+}
+
 Game* Game_create(void) {
     Game* game = calloc(sizeof(Game), 1);
     game->Width = 1920;
@@ -121,42 +192,22 @@ Game* Game_create(void) {
         return game;
     }
 
+    game->StartScreen = Game_load_texture(game->Renderer, "assets/loading_screen.jpg");
     game->Background = Game_load_texture(game->Renderer, "assets/background.jpg");
     game->Rama = Game_load_texture(game->Renderer, "assets/rama.png");
     game->Oni = Game_load_texture(game->Renderer, "assets/oni.png");
 
     game->ScreenSurface = SDL_GetWindowSurface(game->Window);
 
-    game->World = World_create(game->Renderer, 100);
+    game->Font = TTF_OpenFont("assets/font.ttf", 72);
+    if (!game->Font) {
+        printf("Font could not be loaded. TTF_Error: %s\n", TTF_GetError());
+        return game;
+    }
 
-    Controller* playerController = calloc(sizeof(Controller), 1);
-    Position* playerPosition = calloc(sizeof(Position), 1);
-    playerPosition->X = game->Width / 2.0;
-    playerPosition->Y = game->Height / 2.0;
-    playerPosition->R = 50.0;
-    game->PlayerPosition = playerPosition;
-
-    Velocity* playerVelocity = calloc(sizeof(Velocity), 1);
-    game->PlayerVelocity = playerVelocity;
-
-    Target* playerTarget = calloc(sizeof(Target), 1);
-    playerTarget->Direction = calloc(sizeof(Direction), 1);
-
-    Life* playerLife = calloc(sizeof(Life), 1);
-    playerLife->MaxHealth = 3.0;
-    playerLife->Health = 3.0;
-
-    World_add_entity(
-        game->World,
-        playerController,
-        playerTarget,
-        playerPosition,
-        playerVelocity,
-        playerLife,
-        game->Rama);
-
-    for (usize i = 1; i < 10; i++) {
-        SpawnEnemy(game, playerPosition);
+    game->GameOverTexture = Game_create_text_texture(game, "Game over!");
+    if (!game->GameOverTexture) {
+        return game;
     }
 
     return game;
@@ -178,6 +229,25 @@ SDL_Surface* Game_load_image(SDL_Surface* screenSurface, const char* path) {
     SDL_FreeSurface(surface);
 
     return optimizedSurface;
+}
+
+void Game_render_end_screen(Game* game, u32 score) {
+    i32 w1, h1;
+    SDL_QueryTexture(game->GameOverTexture, NULL, NULL, &w1, &h1);
+    SDL_Rect firstLine = { game->Width / 2 - w1 / 2, game->Height / 2 - h1 / 2 - h1, w1, h1 };
+    SDL_RenderCopy(game->Renderer, game->GameOverTexture, NULL, &firstLine);
+
+    i32 w2, h2;
+    char scoreTextBuffer[50];
+    usize length = snprintf(scoreTextBuffer, 50, "Your score is %d.", score);
+    SDL_Texture* scoreTextTexture = Game_create_text_texture(game, scoreTextBuffer);
+    SDL_QueryTexture(scoreTextTexture, NULL, NULL, &w2, &h2);
+    SDL_Rect secondLine = { game->Width / 2 - w2 / 2, game->Height / 2 + h2 / 2, w2, h2 };
+    SDL_RenderCopy(game->Renderer, scoreTextTexture, NULL, &secondLine);
+}
+
+void Game_render_start_screen(Game* game) {
+    SDL_RenderCopy(game->Renderer, game->StartScreen, NULL, NULL);
 }
 
 void Game_render_background(Game* game, f64 dt) {
@@ -217,6 +287,7 @@ void Game_loop(Game* game) {
     u64 lastEnemySpawnTime = SDL_GetPerformanceCounter();
     u64 lastSimulationTime = SDL_GetPerformanceCounter();
 
+
     while (!quit) {
         u64 frameStart = SDL_GetPerformanceCounter();
 
@@ -228,11 +299,11 @@ void Game_loop(Game* game) {
                 e.key.keysym.sym == SDLK_ESCAPE) {
                 quit = true;
             }
-        }
-
-        if ((frameStart - lastEnemySpawnTime) / (f64)SDL_GetPerformanceFrequency() > 3) {
-            lastEnemySpawnTime = frameStart;
-            SpawnEnemy(game, game->PlayerPosition);
+            if (e.type == SDL_KEYDOWN &&
+                e.key.keysym.sym == SDLK_RETURN) {
+                Game_spawn_world(game);
+                game->State = Loop;
+            }
         }
 
         SDL_SetRenderDrawColor(game->Renderer, 0, 0, 0, 0);
@@ -241,8 +312,26 @@ void Game_loop(Game* game) {
         u64 currentSimulationTime = SDL_GetPerformanceCounter();
         f64 dt = (currentSimulationTime - lastSimulationTime) / (f64)SDL_GetPerformanceFrequency();
 
-        Game_render_background(game, dt);
-        World_update(game->World, dt);
+        if (game->State == Start) {
+            Game_render_start_screen(game);
+        }
+
+        if (game->State == Loop) {
+            if ((frameStart - lastEnemySpawnTime) / (f64)SDL_GetPerformanceFrequency() > 3) {
+                lastEnemySpawnTime = frameStart;
+                SpawnEnemy(game, game->PlayerPosition);
+            }
+
+            Game_render_background(game, dt);
+            game->Score = World_update(game->World, dt);
+            if (game->Score > 0) {
+                game->State = End;
+            }
+        }
+
+        if (game->State == End) {
+            Game_render_end_screen(game, game->Score);
+        }
 
         lastSimulationTime = currentSimulationTime;
 
