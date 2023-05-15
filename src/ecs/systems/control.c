@@ -39,7 +39,7 @@ void Control(Controller* controller, Velocity* velocity) {
         velocity->X += 1;
     }
 
-    f64 speed = 200;
+    f64 speed = 150;
 
     f64 currentLength = sqrt(velocity->X * velocity->X + velocity->Y * velocity->Y);
     if (currentLength) {

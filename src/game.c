@@ -4,6 +4,7 @@
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_timer.h>
+#include <SDL2/SDL_video.h>
 #include <math.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>
@@ -48,6 +49,7 @@ typedef struct Game {
     TTF_Font* Font;
     SDL_Texture* GameOverTextTexture;
     i32 Score;
+    f32 EnemySpawnTime;
 } Game;
 
 void SpawnEnemy(Game* game, Position* playerPosition) {
@@ -97,7 +99,7 @@ SDL_Texture* Game_load_texture(SDL_Renderer* renderer, const char* path) {
 void Game_spawn_world(Game* game) {
     game->State = Start;
 
-    game->World = World_create(game->Renderer, 100);
+    game->World = World_create(game->Renderer, 500);
 
     Controller* playerController = calloc(sizeof(Controller), 1);
     Position* playerPosition = calloc(sizeof(Position), 1);
@@ -128,6 +130,8 @@ void Game_spawn_world(Game* game) {
     for (usize i = 1; i < 10; i++) {
         SpawnEnemy(game, playerPosition);
     }
+
+    game->EnemySpawnTime = 3;
 }
 
 SDL_Texture* Game_create_text_texture(Game* game, char* text) {
@@ -193,7 +197,7 @@ Game* Game_create(void) {
         return game;
     }
 
-    game->StartScreen = Game_load_texture(game->Renderer, "assets/loading_screen.jpg");
+    game->StartScreen = Game_load_texture(game->Renderer, "assets/loading_screen2.jpg");
     game->Background = Game_load_texture(game->Renderer, "assets/background.jpg");
     game->Rama = Game_load_texture(game->Renderer, "assets/rama.png");
     game->Oni = Game_load_texture(game->Renderer, "assets/oni.png");
@@ -232,7 +236,9 @@ SDL_Surface* Game_load_image(SDL_Surface* screenSurface, const char* path) {
     return optimizedSurface;
 }
 
-void Game_render_end_screen(Game* game, u32 score) {
+void Game_render_end_screen(Game* game) {
+    u32 score = World_get_score(game->World);
+
     i32 w1, h1;
     SDL_QueryTexture(game->GameOverTextTexture, NULL, NULL, &w1, &h1);
     SDL_Rect firstLine = { game->Width / 2 - w1 / 2, game->Height / 2 - h1 / 2 - h1, w1, h1 };
@@ -245,6 +251,18 @@ void Game_render_end_screen(Game* game, u32 score) {
     SDL_QueryTexture(scoreTextTexture, NULL, NULL, &w2, &h2);
     SDL_Rect secondLine = { game->Width / 2 - w2 / 2, game->Height / 2 + h2 / 2, w2, h2 };
     SDL_RenderCopy(game->Renderer, scoreTextTexture, NULL, &secondLine);
+}
+
+void Game_render_score(Game* game) {
+    u32 score = World_get_score(game->World);
+
+    i32 w, h;
+    char scoreTextBuffer[16];
+    usize length = snprintf(scoreTextBuffer, 16, "%d", score);
+    SDL_Texture* scoreTextTexture = Game_create_text_texture(game, scoreTextBuffer);
+    SDL_QueryTexture(scoreTextTexture, NULL, NULL, &w, &h);
+    SDL_Rect corner = { 64 - w / 2, 64 - h / 2, w, h };
+    SDL_RenderCopy(game->Renderer, scoreTextTexture, NULL, &corner);
 }
 
 void Game_render_start_screen(Game* game) {
@@ -299,11 +317,16 @@ void Game_loop(Game* game) {
             }
             if (e.type == SDL_KEYDOWN &&
                 e.key.keysym.sym == SDLK_ESCAPE) {
-                game->State = Exit;
-                quit = true;
+                if (game->State != Start) {
+                    game->State = Start;
+                } else {
+                    game->State = Exit;
+                    quit = true;
+                }
             }
             if (e.type == SDL_KEYDOWN &&
-                e.key.keysym.sym == SDLK_RETURN) {
+                e.key.keysym.sym == SDLK_RETURN &&
+                game->State == Start) {
                 Game_spawn_world(game);
                 game->State = Loop;
             }
@@ -320,20 +343,25 @@ void Game_loop(Game* game) {
         }
 
         if (game->State == Loop) {
-            if ((frameStart - lastEnemySpawnTime) / (f64)SDL_GetPerformanceFrequency() > 3) {
+            if ((frameStart - lastEnemySpawnTime) / (f64)SDL_GetPerformanceFrequency() > game->EnemySpawnTime) {
                 lastEnemySpawnTime = frameStart;
                 SpawnEnemy(game, game->PlayerPosition);
+                if (game->EnemySpawnTime > 1) {
+                    game->EnemySpawnTime -= 0.1;
+                }
             }
 
             Game_render_background(game, dt);
-            game->Score = World_update(game->World, dt);
-            if (game->Score >= 0) {
+            bool worldUpdated = World_update(game->World, dt);
+            if (!worldUpdated) {
                 game->State = GameOver;
             }
+
+            Game_render_score(game);
         }
 
         if (game->State == GameOver) {
-            Game_render_end_screen(game, game->Score);
+            Game_render_end_screen(game);
         }
 
         if (game->State == Exit) {
@@ -358,8 +386,10 @@ void Game_loop(Game* game) {
 }
 
 void Game_destroy(Game* game) {
-    World_destroy(game->World);
-    game->World = NULL;
+    if (game->World) {
+        World_destroy(game->World);
+        game->World = NULL;
+    }
 
     SDL_DestroyTexture(game->StartScreen);
     game->StartScreen = NULL;

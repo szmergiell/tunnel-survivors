@@ -22,12 +22,6 @@
 #include "types.h"
 #include "world.h"
 
-typedef enum WorldState {
-    PlayerAlive,
-    PlayerDead,
-    WorldStateLength
-} WorldState;
-
 typedef struct World {
     usize Capacity;
     usize Count;
@@ -38,7 +32,7 @@ typedef struct World {
     Velocity** Velocities;
     SDL_Texture** Textures;
     SDL_Renderer* renderer;
-    i32 Score;
+    u32 Score;
 } World;
 
 World* World_create(SDL_Renderer* renderer, usize capacity) {
@@ -83,7 +77,7 @@ bool World_add_entity(
     return true;
 }
 
-u32 World_update(World* world, f64 dt) {
+bool World_update(World* world, f64 dt) {
     for (usize i = 0; i < world->Capacity; i++) {
         // TODO: controller component is a being used as a proxy / tag
         // for identitfying player entity..
@@ -111,17 +105,14 @@ u32 World_update(World* world, f64 dt) {
             if (i != 0) {
                 world->Score++;
             } else {
-                return world->Score;
+                return false;
             }
             continue;
         }
         Draw(world->renderer, world->Positions[i], world->Lives[i], world->Textures[i]);
     }
 
-    // TODO: pass score separately to avoid issue
-    // where game does not end
-    // because user scored 0
-    return -1;
+    return true;
 }
 
 void World_destroy(World *world) {
@@ -171,4 +162,8 @@ void World_destroy(World *world) {
 
     free(world);
     world = NULL;
+}
+
+u32 World_get_score(World* world) {
+    return world->Score;
 }

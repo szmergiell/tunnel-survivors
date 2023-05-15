@@ -24,6 +24,8 @@ bool World_add_entity(
     Life* life,
     SDL_Texture* texture);
 
-u32 World_update(World* world, f64 dt);
+bool World_update(World* world, f64 dt);
 
 void World_destroy(World* world);
+
+u32 World_get_score(World* world);
