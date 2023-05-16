@@ -99,7 +99,7 @@ SDL_Texture* Game_load_texture(SDL_Renderer* renderer, const char* path) {
 void Game_spawn_world(Game* game) {
     game->State = Start;
 
-    game->World = World_create(game->Renderer, 500);
+    game->World = World_create(game->Renderer, 10);
 
     Controller* playerController = calloc(sizeof(Controller), 1);
     Position* playerPosition = calloc(sizeof(Position), 1);

@@ -51,7 +51,7 @@ i32 SDL_RenderDrawCircle(SDL_Renderer* renderer, int x, int y, int radius)
 }
 
 void Draw(SDL_Renderer* renderer, Position* position, Life* life, SDL_Texture* texture) {
-    if (!renderer || !position) {
+    if (!renderer || !position || !life || life->Health <= 0) {
         return;
     }
 

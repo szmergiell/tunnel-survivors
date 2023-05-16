@@ -77,11 +77,55 @@ bool World_add_entity(
     return true;
 }
 
+typedef struct Entity {
+    usize Id;
+    Position* Position;
+    Life* Life;
+    SDL_Texture* Texture;
+} Entity;
+
+i32 CompareEntityPositions(const void* e1, const void* e2) {
+    Entity* p1 = (Entity*)e1;
+    Entity* p2 = (Entity*)e2;
+
+    if (p1->Position && !p2->Position) {
+        return 1;
+    } else if (!p1->Position && p2->Position) {
+        return -1;
+    } else if (!p1->Position && !p2->Position) {
+        return 0;
+    }
+
+    if (p1->Position->Y < p2->Position->Y) {
+        return -1;
+    } else if (p1->Position->Y > p1->Position->Y) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+Entity* SortEntitiesByPosition(World* world) {
+    Entity* entities = calloc(sizeof(Entity), world->Capacity);
+    for (usize i = 0; i < world->Capacity; i++) {
+        entities[i].Id = i;
+        entities[i].Position = world->Positions[i];
+        entities[i].Life = world->Lives[i];
+        entities[i].Texture = world->Textures[i];
+    }
+
+    qsort(entities, world->Capacity, sizeof(Entity), &CompareEntityPositions);
+
+    return entities;
+}
+
 bool World_update(World* world, f64 dt) {
     for (usize i = 0; i < world->Capacity; i++) {
         // TODO: controller component is a being used as a proxy / tag
         // for identitfying player entity..
+        Control(world->Controllers[i], world->Velocities[i]);
         if (i == 0) {
+            printf("%f %f\n", world->Positions[i]->X, world->Positions[i]->Y);
             CollidePlayer(i, world->Positions, world->Velocities, world->Capacity, dt);
         }
         if (i != 0) {
@@ -89,27 +133,50 @@ bool World_update(World* world, f64 dt) {
         }
         ChooseTarget(i, world->Controllers[i], world->Targets[i], world->Positions, world->Capacity);
         Aim(world->Positions[i], world->Targets[i]);
-        FaceTarget(world->Targets[i], world->Velocities[i]);
-        Control(world->Controllers[i], world->Velocities[i]);
-        Attack(world->Targets[i], world->Lives, dt);
-        CollideWorld(i, world->Positions, world->Velocities, world->Targets, world->Lives, world->Capacity, dt);
         if (i != 0) {
+            FaceTarget(world->Targets[i], world->Velocities[i]);
+        }
+        Attack(world->Targets[i], world->Lives, dt);
+        if (i != 0) {
+            CollideWorld(i, world->Positions, world->Velocities, world->Targets, world->Lives, world->Capacity, dt);
             Move(world->Positions[i], world->Velocities[i], dt);
         }
-        if (world->Lives[i] && world->Lives[i]->Health < 0) {
-            world->Controllers[i] = NULL;
-            world->Targets[i] = NULL;
-            world->Positions[i] = NULL;
-            world->Velocities[i] = NULL;
-            world->Lives[i] = NULL;
+        if (world->Lives[i] && world->Lives[i]->Health <= 0) {
+            Controller* tempController = world->Controllers[world->Count];
+            Controller* tempTarget = world->Targets[world->Count];
+            Controller* tempPosition = world->Positions[world->Count];
+            Controller* tempVelocity = world->Velocities[world->Count];
+            Controller* tempLife = world->Lives[world->Count];
+
+            world->Controllers[i] = world->Controllers[world->Count];
+            world->Targets[i] = world->Targets[world->Count];
+            world->Positions[i] = world->Positions[world->Count];
+            world->Velocities[i] = world->Velocities[world->Count];
+            world->Lives[i] = world->Lives[world->Count];
+            world->Textures[i] = world->Textures[world->Count];
+
+            world->Controllers[world->Count] = NULL;
+            world->Targets[world->Count] = NULL;
+            world->Positions[world->Count] = NULL;
+            world->Velocities[world->Count] = NULL;
+            world->Lives[world->Count] = NULL;
+            world->Textures[world->Count] = NULL;
+
+            world->Count--;
             if (i != 0) {
                 world->Score++;
             } else {
                 return false;
             }
-            continue;
         }
-        Draw(world->renderer, world->Positions[i], world->Lives[i], world->Textures[i]);
+    }
+
+    Entity* entities = SortEntitiesByPosition(world);
+
+    for (usize i = 0; i < world->Capacity; i++) {
+        Entity entity = entities[i];
+        usize id = entity.Id;
+        Draw(world->renderer, world->Positions[id], world->Lives[id], world->Textures[id]);
     }
 
     return true;
