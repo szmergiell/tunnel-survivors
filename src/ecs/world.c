@@ -89,16 +89,16 @@ i32 CompareEntityPositions(const void* e1, const void* e2) {
     Entity* p2 = (Entity*)e2;
 
     if (p1->Position && !p2->Position) {
-        return 1;
-    } else if (!p1->Position && p2->Position) {
         return -1;
+    } else if (!p1->Position && p2->Position) {
+        return 1;
     } else if (!p1->Position && !p2->Position) {
         return 0;
     }
 
     if (p1->Position->Y < p2->Position->Y) {
         return -1;
-    } else if (p1->Position->Y > p1->Position->Y) {
+    } else if (p1->Position->Y > p2->Position->Y) {
         return 1;
     } else {
         return 0;
@@ -107,6 +107,7 @@ i32 CompareEntityPositions(const void* e1, const void* e2) {
 
 Entity* SortEntitiesByPosition(World* world) {
     Entity* entities = calloc(sizeof(Entity), world->Capacity);
+
     for (usize i = 0; i < world->Capacity; i++) {
         entities[i].Id = i;
         entities[i].Position = world->Positions[i];
@@ -124,45 +125,63 @@ bool World_update(World* world, f64 dt) {
         // TODO: controller component is a being used as a proxy / tag
         // for identitfying player entity..
         Control(world->Controllers[i], world->Velocities[i]);
+
         if (i == 0) {
-            printf("%f %f\n", world->Positions[i]->X, world->Positions[i]->Y);
             CollidePlayer(i, world->Positions, world->Velocities, world->Capacity, dt);
         }
+
         if (i != 0) {
             MoveWorld(world->Positions[i], world->Velocities[0], dt);
         }
+
         ChooseTarget(i, world->Controllers[i], world->Targets[i], world->Positions, world->Capacity);
+
         Aim(world->Positions[i], world->Targets[i]);
+
         if (i != 0) {
             FaceTarget(world->Targets[i], world->Velocities[i]);
         }
+
         Attack(world->Targets[i], world->Lives, dt);
+
         if (i != 0) {
             CollideWorld(i, world->Positions, world->Velocities, world->Targets, world->Lives, world->Capacity, dt);
             Move(world->Positions[i], world->Velocities[i], dt);
         }
-        if (world->Lives[i] && world->Lives[i]->Health <= 0) {
-            Controller* tempController = world->Controllers[world->Count];
-            Controller* tempTarget = world->Targets[world->Count];
-            Controller* tempPosition = world->Positions[world->Count];
-            Controller* tempVelocity = world->Velocities[world->Count];
-            Controller* tempLife = world->Lives[world->Count];
 
+        if (world->Lives[i] && world->Lives[i]->Health <= 0) {
+            world->Count--;
+
+            free(world->Controllers[i]);
             world->Controllers[i] = world->Controllers[world->Count];
+
+            free(world->Targets[i]);
             world->Targets[i] = world->Targets[world->Count];
+
+            free(world->Positions[i]);
             world->Positions[i] = world->Positions[world->Count];
+
+            free(world->Velocities[i]);
             world->Velocities[i] = world->Velocities[world->Count];
+
+            free(world->Lives[i]);
             world->Lives[i] = world->Lives[world->Count];
+
+            // free(world->Textures[i]);
             world->Textures[i] = world->Textures[world->Count];
 
             world->Controllers[world->Count] = NULL;
+
             world->Targets[world->Count] = NULL;
+
             world->Positions[world->Count] = NULL;
+
             world->Velocities[world->Count] = NULL;
+
             world->Lives[world->Count] = NULL;
+
             world->Textures[world->Count] = NULL;
 
-            world->Count--;
             if (i != 0) {
                 world->Score++;
             } else {
@@ -176,6 +195,7 @@ bool World_update(World* world, f64 dt) {
     for (usize i = 0; i < world->Capacity; i++) {
         Entity entity = entities[i];
         usize id = entity.Id;
+        // printf("%zu %f\n", id, world->Positions[id] ? world->Positions[id]->Y : -333);
         Draw(world->renderer, world->Positions[id], world->Lives[id], world->Textures[id]);
     }
 

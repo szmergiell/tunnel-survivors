@@ -52,38 +52,79 @@ typedef struct Game {
     f32 EnemySpawnTime;
 } Game;
 
-void SpawnEnemy(Game* game, Position* playerPosition) {
-        f64 rx = rand() / (f64)RAND_MAX;
-        f64 ry = rand() / (f64)RAND_MAX;
-        Position* position = calloc(sizeof(Position), 1);
-        position->R = 50.0;
-        f64 ri = rand() / (f64)RAND_MAX;
-        if (ri <= 0.25) {
-            position->X = game->Width * rx;
-            position->Y = 0;
-        } else if (ri <= 0.50) {
-            position->X = game->Width;
-            position->Y = game->Height * ry;
-        } else if (ri <= 0.75) {
-            position->X = game->Width * rx;
-            position->Y = game->Height;
-        } else if (ri <= 1.00) {
-            position->X = 0;
-            position->Y = game->Height * ry;
-        }
+void SpawnEnemy(Game* game, Position* playerPosition, Velocity* playerVelocity) {
 
-        Velocity* velocity = calloc(sizeof(Velocity), 1);
+    Direction playerDirection = {
+        .X = !playerVelocity ? 0 : playerVelocity->X > 0 ? 1 : -1,
+        .Y = !playerVelocity ? 0 : playerVelocity->Y > 0 ? 1 : -1,
+    };
 
-        Target* target = calloc(sizeof(Target), 1);
-        // TODO: hard-coded player entity ID
-        target->TargetId = 0;
-        target->Position = playerPosition;
-        target->Direction = calloc(sizeof(Direction), 1);
-        Life* life = calloc(sizeof(Life), 1);
-        life->MaxHealth = 3.0;
-        life->Health = 3.0;
+    f64 rx = rand() / (f64)RAND_MAX;
+    f64 ry = rand() / (f64)RAND_MAX;
+    Position* position = calloc(sizeof(Position), 1);
+    position->R = 50.0;
+    f64 ri = rand() / (f64)RAND_MAX;
 
-        World_add_entity(game->World, NULL, target, position, velocity, life, game->Oni);
+    f64 baseChance = 1.0/6.0;
+
+    f64 upBonus = (playerVelocity->Y < 0) * baseChance;
+    f64 downBonus = (playerVelocity->Y > 0) * baseChance;
+    f64 rightBonus = (playerVelocity->X > 0) * baseChance;
+    f64 leftBonus = (playerVelocity->X < 0) * baseChance;
+
+    f64 sumBonus = upBonus + downBonus + rightBonus + leftBonus;
+    if (sumBonus < 2 * baseChance) {
+        // player is moving in one direction
+        upBonus = upBonus > 0 ? upBonus * 2 : 0;
+        downBonus = downBonus > 0 ? downBonus * 2 : 0;
+        rightBonus = rightBonus > 0 ? rightBonus * 2 : 0;
+        leftBonus = leftBonus > 0 ? leftBonus * 2 : 0;
+    }
+    if (sumBonus == 0) {
+        baseChance = 1.0/4;
+    }
+
+    f64 upRange = baseChance + upBonus;
+    f64 rightRange = baseChance + upRange + rightBonus;
+    f64 downRange = baseChance + rightRange + downBonus;
+    f64 leftRange = baseChance + downRange + leftBonus;
+
+    // printf("L: %f\t U: %f\t D: %f\t R: %f\n",
+    //         leftRange - downRange,
+    //         upRange,
+    //         downRange - rightRange,
+    //         rightRange - upRange);
+
+    if (ri <= upRange) {
+        // above upper edge
+        position->X = game->Width * rx;
+        position->Y = 0;
+    } else if (ri <= rightRange) {
+        // beyond right edge
+        position->X = game->Width;
+        position->Y = game->Height * ry;
+    } else if (ri <= downRange) {
+        // below lower edge
+        position->X = game->Width * rx;
+        position->Y = game->Height;
+    } else if (ri <= leftRange) {
+        // beyond left edge
+        position->X = 0;
+        position->Y = game->Height * ry;
+    }
+
+    Velocity* velocity = calloc(sizeof(Velocity), 1);
+
+    Target* target = calloc(sizeof(Target), 1);
+    // TODO: hard-coded player entity ID
+    target->TargetId = 0;
+    target->Position = playerPosition;
+    target->Direction = calloc(sizeof(Direction), 1);
+    Life* life = calloc(sizeof(Life), 1);
+    life->MaxHealth = 3.0;
+    life->Health = 3.0;
+
+    World_add_entity(game->World, NULL, target, position, velocity, life, game->Oni);
 }
 
 SDL_Texture* Game_load_texture(SDL_Renderer* renderer, const char* path) {
@@ -99,7 +140,7 @@ SDL_Texture* Game_load_texture(SDL_Renderer* renderer, const char* path) {
 void Game_spawn_world(Game* game) {
     game->State = Start;
 
-    game->World = World_create(game->Renderer, 10);
+    game->World = World_create(game->Renderer, 500);
 
     Controller* playerController = calloc(sizeof(Controller), 1);
     Position* playerPosition = calloc(sizeof(Position), 1);
@@ -128,7 +169,7 @@ void Game_spawn_world(Game* game) {
             game->Rama);
 
     for (usize i = 1; i < 10; i++) {
-        SpawnEnemy(game, playerPosition);
+        SpawnEnemy(game, playerPosition, playerVelocity);
     }
 
     game->EnemySpawnTime = 3;
@@ -270,20 +311,24 @@ void Game_render_start_screen(Game* game) {
 }
 
 void Game_render_background(Game* game, f64 dt) {
-    static SDL_Rect textureRectangle = {
-        .w = 1920,
-        .h = 1080,
-        .x = 1920,
-        .y = 1080,
+    static SDL_FRect textureRectangle = {
+        .w = 1920.0,
+        .h = 1080.0,
+        .x = 1920.0,
+        .y = 1080.0,
     };
-    textureRectangle.x += (i32)(game->PlayerVelocity->X * dt);
+
+    f64 lastX = textureRectangle.x;
+    textureRectangle.x += game->PlayerVelocity->X * dt;
     if (textureRectangle.x <= 0) {
         textureRectangle.x = 1920;
     }
     if (textureRectangle.x >= 2 * 1920) {
         textureRectangle.x = 1920;
     }
-    textureRectangle.y += (i32)(game->PlayerVelocity->Y * dt);
+
+    f64 lastY = textureRectangle.y;
+    textureRectangle.y += game->PlayerVelocity->Y * dt;
     if (textureRectangle.y <= 0) {
         textureRectangle.y = 1080;
     }
@@ -291,9 +336,22 @@ void Game_render_background(Game* game, f64 dt) {
         textureRectangle.y = 1080;
     }
 
-    // printf("world velocity: %d %d\n", (i32)(game->PlayerVelocity->X * dt), (int)(game->PlayerVelocity->Y * dt));
+    f64 dx = textureRectangle.x - lastX;
+    f64 dy = textureRectangle.y - lastY;
+    f64 length = sqrt(dx * dx + dy * dy);
 
-    SDL_RenderCopy(game->Renderer, game->Background, &textureRectangle, NULL);
+    // printf("player velocity: %f %f\n", game->PlayerVelocity->X, game->PlayerVelocity->Y);
+    // printf("world velocity: %f %f %f\n", dx, dy, length);
+    // printf("world velocity: %d %d\n", (i32)(game->PlayerVelocity->X * dt), (i32)(game->PlayerVelocity->Y * dt));
+
+    SDL_Rect textIntRect = {
+        .w = textureRectangle.w,
+        .h = textureRectangle.h,
+        .x = textureRectangle.x,
+        .y = textureRectangle.y,
+    };
+
+    SDL_RenderCopy(game->Renderer, game->Background, &textIntRect, NULL);
 }
 
 void Game_loop(Game* game) {
@@ -345,7 +403,7 @@ void Game_loop(Game* game) {
         if (game->State == Loop) {
             if ((frameStart - lastEnemySpawnTime) / (f64)SDL_GetPerformanceFrequency() > game->EnemySpawnTime) {
                 lastEnemySpawnTime = frameStart;
-                SpawnEnemy(game, game->PlayerPosition);
+                SpawnEnemy(game, game->PlayerPosition, game->PlayerVelocity);
                 if (game->EnemySpawnTime > 1) {
                     game->EnemySpawnTime -= 0.1;
                 }
