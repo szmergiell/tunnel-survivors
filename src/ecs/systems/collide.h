@@ -16,5 +16,5 @@ void CollideWorld(
         Velocity** velocities,
         Target** targets,
         Life** lives,
-        usize capacity, 
+        usize capacity,
         f64 dt);

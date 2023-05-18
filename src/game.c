@@ -53,12 +53,6 @@ typedef struct Game {
 } Game;
 
 void SpawnEnemy(Game* game, Position* playerPosition, Velocity* playerVelocity) {
-
-    Direction playerDirection = {
-        .X = !playerVelocity ? 0 : playerVelocity->X > 0 ? 1 : -1,
-        .Y = !playerVelocity ? 0 : playerVelocity->Y > 0 ? 1 : -1,
-    };
-
     f64 rx = rand() / (f64)RAND_MAX;
     f64 ry = rand() / (f64)RAND_MAX;
     Position* position = calloc(sizeof(Position), 1);

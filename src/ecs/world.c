@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "bullet.h"
 #include "collide.h"
 #include "components/position.h"
 #include "components/target.h"
@@ -12,6 +13,7 @@
 #include "direction.h"
 #include "game.h"
 #include "moveWorld.h"
+#include "shoot.h"
 #include "systems/chooseTarget.h"
 #include "systems/aim.h"
 #include "systems/faceTarget.h"
@@ -30,6 +32,7 @@ typedef struct World {
     Position** Positions;
     Life** Lives;
     Velocity** Velocities;
+    Bullet* Bullet;
     SDL_Texture** Textures;
     SDL_Renderer* renderer;
     u32 Score;
@@ -144,6 +147,16 @@ bool World_update(World* world, f64 dt) {
 
         Attack(world->Targets[i], world->Lives, dt);
 
+        // printf("%d - life %f\n", world->Bullet != NULL, world->Bullet ? world->Bullet->Life->Health : -100);
+        if (i == 0 && (!world->Bullet || world->Bullet->Life->Health < 0)) {
+            Life* life = calloc(sizeof(Life), 1);
+            life->MaxHealth = 3;
+            life->Health = 3;
+            Bullet* bullet = Bullet_spawn(world->Positions[0], world->Targets[0]->Direction, 200, life);
+            // printf("bullet spawned");
+            world->Bullet = bullet;
+        }
+
         if (i != 0) {
             CollideWorld(i, world->Positions, world->Velocities, world->Targets, world->Lives, world->Capacity, dt);
             Move(world->Positions[i], world->Velocities[i], dt);
@@ -199,6 +212,11 @@ bool World_update(World* world, f64 dt) {
         Draw(world->renderer, world->Positions[id], world->Lives[id], world->Textures[id]);
     }
 
+    MoveWorld(world->Bullet->Start, world->Velocities[0], dt);
+    MoveWorld(world->Bullet->End, world->Velocities[0], dt);
+    Bullet_travel(world->Bullet, world->Positions, world->Lives, dt);
+    Bullet_draw(world->renderer, world->Bullet, dt);
+
     return true;
 }
 
@@ -246,6 +264,9 @@ void World_destroy(World *world) {
 
     free(world->Textures);
     world->Textures = NULL;
+
+    free(world->Bullet);
+    world->Bullet = NULL;
 
     free(world);
     world = NULL;
