@@ -1,3 +1,4 @@
+#include <SDL2/SDL_mouse.h>
 #include <math.h>
 #include <stdio.h>
 #include <SDL2/SDL.h>
@@ -5,12 +6,14 @@
 #include "../components/controller.h"
 #include "../components/velocity.h"
 #include "direction.h"
+#include "position.h"
 #include "types.h"
 #include "control.h"
+#include "world.h"
 
 // TODO: Velocity is used as direction
-void Control(Controller* controller, Velocity* velocity) {
-    if (!controller || !velocity) {
+void Control(Controller* controller, Velocity* velocity, World* world) {
+    if (!controller || !velocity || !world) {
         return;
     }
 
@@ -45,5 +48,16 @@ void Control(Controller* controller, Velocity* velocity) {
     if (currentLength) {
         velocity->X = velocity->X * speed / currentLength;
         velocity->Y = velocity->Y * speed / currentLength;
+    }
+
+    i32 mouseX, mouseY;
+    const u32 mouseState = SDL_GetMouseState(&mouseX, &mouseY);
+    if (mouseState & SDL_BUTTON(1)) {
+        Position* mousePosition = calloc(sizeof(Position), 1);
+        mousePosition->X = mouseX;
+        mousePosition->Y = mouseY;
+        // printf("%d %d\n", mouseX, mouseY);
+        World_set_player_target(world, mousePosition);
+        World_spawn_bullet(world);
     }
 }

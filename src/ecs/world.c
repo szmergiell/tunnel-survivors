@@ -124,11 +124,39 @@ Entity* SortEntitiesByPosition(World* world) {
     return entities;
 }
 
+void World_set_player_target(World* world, Position* position) {
+    world->Targets[0]->Position = position;
+    f64 distanceX = position->X - world->Positions[0]->X;
+    f64 distanceY = position->Y - world->Positions[0]->Y;
+    f64 distance = sqrt(distanceX * distanceX + distanceY * distanceY);
+    world->Targets[0]->Direction->X = distanceX / distance;
+    world->Targets[0]->Direction->Y = distanceY / distance;
+    world->Targets[0]->Distance = distance;
+}
+
+void World_spawn_bullet(World* world) {
+    u64 perfCounter = SDL_GetPerformanceCounter();
+    f64 secondsSinceLastBulletSpawn = (perfCounter - world->BulletSpawnTicks);
+    secondsSinceLastBulletSpawn /= (f64)SDL_GetPerformanceFrequency();
+
+    if (secondsSinceLastBulletSpawn < 3) {
+        return;
+    }
+
+    Life* life = calloc(sizeof(Life), 1);
+    life->MaxHealth = 1.2;
+    life->Health = 1.2;
+    Bullet* bullet = Bullet_spawn(world->Positions[0], world->Targets[0]->Direction, 164, life, world->Capacity);
+    // printf("bullet spawned");
+    world->Bullet = bullet;
+    world->BulletSpawnTicks = perfCounter;
+}
+
 bool World_update(World* world, f64 dt) {
     for (usize i = 0; i < world->Capacity; i++) {
         // TODO: controller component is a being used as a proxy / tag
         // for identitfying player entity..
-        Control(world->Controllers[i], world->Velocities[i]);
+        Control(world->Controllers[i], world->Velocities[i], world);
 
         if (i == 0) {
             CollidePlayer(i, world->Positions, world->Velocities, world->Capacity, dt);
@@ -138,7 +166,9 @@ bool World_update(World* world, f64 dt) {
             MoveWorld(world->Positions[i], world->Velocities[0], dt);
         }
 
-        ChooseTarget(i, world->Controllers[i], world->Targets[i], world->Positions, world->Capacity);
+        if (i == 0) {
+            // ChooseTarget(i, world->Controllers[i], world->Targets[i], world->Positions, world->Capacity);
+        }
 
         Aim(world->Positions[i], world->Targets[i]);
 
@@ -154,10 +184,6 @@ bool World_update(World* world, f64 dt) {
         }
     }
 
-    u64 perfCounter = SDL_GetPerformanceCounter();
-    f64 secondsSinceLastBulletSpawn = (perfCounter - world->BulletSpawnTicks);
-    secondsSinceLastBulletSpawn /= (f64)SDL_GetPerformanceFrequency();
-
     if (world->Bullet && world->Bullet->Life->Health <= 0) {
         free(world->Bullet->Life);
         world->Bullet->Life = NULL;
@@ -171,16 +197,6 @@ bool World_update(World* world, f64 dt) {
         world->Bullet->Velocity = NULL;
         free(world->Bullet);
         world->Bullet = NULL;
-    }
-    // printf("%d - life %f\n", world->Bullet != NULL, world->Bullet ? world->Bullet->Life->Health : -100);
-    if (secondsSinceLastBulletSpawn > 3) {
-        Life* life = calloc(sizeof(Life), 1);
-        life->MaxHealth = 1.2;
-        life->Health = 1.2;
-        Bullet* bullet = Bullet_spawn(world->Positions[0], world->Targets[0]->Direction, 164, life, world->Capacity);
-        // printf("bullet spawned");
-        world->Bullet = bullet;
-        world->BulletSpawnTicks = perfCounter;
     }
 
     Entity* entities = SortEntitiesByPosition(world);

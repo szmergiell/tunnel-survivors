@@ -59,7 +59,7 @@ void SpawnEnemy(Game* game, Position* playerPosition, Velocity* playerVelocity) 
     position->R = 50.0;
     f64 ri = rand() / (f64)RAND_MAX;
 
-    f64 baseChance = 1.0/6.0;
+    f64 baseChance = 1.0/8.0;
 
     f64 upBonus = (playerVelocity->Y < 0) * baseChance;
     f64 downBonus = (playerVelocity->Y > 0) * baseChance;
@@ -67,12 +67,12 @@ void SpawnEnemy(Game* game, Position* playerPosition, Velocity* playerVelocity) 
     f64 leftBonus = (playerVelocity->X < 0) * baseChance;
 
     f64 sumBonus = upBonus + downBonus + rightBonus + leftBonus;
-    if (sumBonus < 2 * baseChance) {
+    if (sumBonus < 4 * baseChance) {
         // player is moving in one direction
-        upBonus = upBonus > 0 ? upBonus * 2 : 0;
-        downBonus = downBonus > 0 ? downBonus * 2 : 0;
-        rightBonus = rightBonus > 0 ? rightBonus * 2 : 0;
-        leftBonus = leftBonus > 0 ? leftBonus * 2 : 0;
+        upBonus = upBonus > 0 ? upBonus * 4 : 0;
+        downBonus = downBonus > 0 ? downBonus * 4 : 0;
+        rightBonus = rightBonus > 0 ? rightBonus * 4 : 0;
+        leftBonus = leftBonus > 0 ? leftBonus * 4 : 0;
     }
     if (sumBonus == 0) {
         baseChance = 1.0/4;

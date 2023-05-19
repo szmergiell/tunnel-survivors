@@ -24,6 +24,10 @@ bool World_add_entity(
     Life* life,
     SDL_Texture* texture);
 
+void World_set_player_target(World* world, Position* position);
+
+void World_spawn_bullet(World* world);
+
 bool World_update(World* world, f64 dt);
 
 void World_destroy(World* world);
