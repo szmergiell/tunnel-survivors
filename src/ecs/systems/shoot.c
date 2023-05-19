@@ -8,8 +8,10 @@
 #include "velocity.h"
 #include <SDL2/SDL_render.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
 
 f64 Magnitude(f64 x, f64 y) {
     return sqrt(x * x + y * y);
@@ -24,7 +26,7 @@ Direction Perpendicular(Direction* direction) {
     return per;
 }
 
-Bullet* Bullet_spawn(Position* position, Direction* direction, f64 width, Life* life) {
+Bullet* Bullet_spawn(Position* position, Direction* direction, f64 width, Life* life, usize worldCapacity) {
     if (!position || !direction || !life) {
         return NULL;
     }
@@ -49,12 +51,18 @@ Bullet* Bullet_spawn(Position* position, Direction* direction, f64 width, Life* 
     // TODO: move center of "bullet" to position
 
     Bullet* bullet = calloc(sizeof(Bullet), 1);
+    bullet->Width = width;
     bullet->Life = life;
+    bullet->LifeDecayPerSecond = 1;
+    bullet->Damage = 3;
+    bullet->DamageDecresePerTarget = 1;
+    bullet->EntitiesHit = calloc(sizeof(bool), worldCapacity);
+
+    bullet->Speed = 500;
 
     Velocity* velocity = calloc(sizeof(Velocity), 1);
-    velocity->X = unitDirection->X * 100;
-    velocity->Y = unitDirection->Y * 100;
-
+    velocity->X = unitDirection->X * bullet->Speed;
+    velocity->Y = unitDirection->Y * bullet->Speed;
     bullet->Velocity = velocity;
 
     f64 midpointX = perpendicularDirection.X / 2;
@@ -87,8 +95,46 @@ void Bullet_travel(Bullet* bullet, Position** positions, Life** lives, f64 dt) {
     bullet->Start->Y += bullet->Velocity->Y * dt;
     bullet->End->X += bullet->Velocity->X * dt;
     bullet->End->Y += bullet->Velocity->Y * dt;
-    f64 dps = 1;
-    f64 damage = dps * dt;
-    bullet->Life->Health -= damage;
+    bullet->Life->Health -= bullet->LifeDecayPerSecond * dt;
+}
+
+bool Bullet_collide(Bullet* bullet, usize entityId, Position* position, Life* life) {
+    if (!position || !life) {
+        return false;
+    }
+    if (bullet->Damage <= 0) {
+        // printf("Bullet damage is zero\n");
+        return false;
+    }
+    if (bullet->EntitiesHit[entityId]) {
+        return false;
+    }
+
+    f64 U = (position->X - bullet->Start->X) * (bullet->End->X - bullet->Start->X) +
+            (position->Y - bullet->Start->Y) * (bullet->End->Y - bullet->Start->Y);
+
+    U /= (bullet->Width * bullet->Width);
+
+    if (U < 0.0 || U > 1.0) {
+        return false;
+    }
+
+    f64 intersectionX = bullet->Start->X + U * (bullet->End->X - bullet->Start->X);
+    f64 intersectionY = bullet->Start->Y + U * (bullet->End->Y - bullet->Start->Y);
+
+    f64 distance = Magnitude(position->X - intersectionX, position->Y - intersectionY);
+
+    if (distance > position->R) {
+        return false;
+    }
+
+    life->Health -= bullet->Damage;
+    // printf("Attacking %zu with %f damage, %f health left\n", entityId, bullet->Damage, life->Health);
+    bullet->Damage -= bullet->DamageDecresePerTarget;
+    if (bullet->Damage < 1) {
+        bullet->Damage = 1;
+    }
+    bullet->EntitiesHit[entityId] = true;
+    return true;
 }
 

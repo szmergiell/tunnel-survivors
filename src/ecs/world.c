@@ -36,6 +36,7 @@ typedef struct World {
     SDL_Texture** Textures;
     SDL_Renderer* renderer;
     u32 Score;
+    u64 BulletSpawnTicks;
 } World;
 
 World* World_create(SDL_Renderer* renderer, usize capacity) {
@@ -145,23 +146,63 @@ bool World_update(World* world, f64 dt) {
             FaceTarget(world->Targets[i], world->Velocities[i]);
         }
 
-        Attack(world->Targets[i], world->Lives, dt);
-
-        // printf("%d - life %f\n", world->Bullet != NULL, world->Bullet ? world->Bullet->Life->Health : -100);
-        if (i == 0 && (!world->Bullet || world->Bullet->Life->Health < 0)) {
-            Life* life = calloc(sizeof(Life), 1);
-            life->MaxHealth = 3;
-            life->Health = 3;
-            Bullet* bullet = Bullet_spawn(world->Positions[0], world->Targets[0]->Direction, 200, life);
-            // printf("bullet spawned");
-            world->Bullet = bullet;
-        }
+        // Attack(world->Targets[i], world->Lives, dt);
 
         if (i != 0) {
             CollideWorld(i, world->Positions, world->Velocities, world->Targets, world->Lives, world->Capacity, dt);
             Move(world->Positions[i], world->Velocities[i], dt);
         }
+    }
 
+    u64 perfCounter = SDL_GetPerformanceCounter();
+    f64 secondsSinceLastBulletSpawn = (perfCounter - world->BulletSpawnTicks);
+    secondsSinceLastBulletSpawn /= (f64)SDL_GetPerformanceFrequency();
+
+    if (world->Bullet && world->Bullet->Life->Health <= 0) {
+        free(world->Bullet->Life);
+        world->Bullet->Life = NULL;
+        free(world->Bullet->Start);
+        world->Bullet->Start = NULL;
+        free(world->Bullet->End);
+        world->Bullet->End = NULL;
+        free(world->Bullet->EntitiesHit);
+        world->Bullet->EntitiesHit = NULL;
+        free(world->Bullet->Velocity);
+        world->Bullet->Velocity = NULL;
+        free(world->Bullet);
+        world->Bullet = NULL;
+    }
+    // printf("%d - life %f\n", world->Bullet != NULL, world->Bullet ? world->Bullet->Life->Health : -100);
+    if (secondsSinceLastBulletSpawn > 3) {
+        Life* life = calloc(sizeof(Life), 1);
+        life->MaxHealth = 1.2;
+        life->Health = 1.2;
+        Bullet* bullet = Bullet_spawn(world->Positions[0], world->Targets[0]->Direction, 164, life, world->Capacity);
+        // printf("bullet spawned");
+        world->Bullet = bullet;
+        world->BulletSpawnTicks = perfCounter;
+    }
+
+    Entity* entities = SortEntitiesByPosition(world);
+
+    for (usize i = 0; i < world->Capacity; i++) {
+        Entity entity = entities[i];
+        usize id = entity.Id;
+        // printf("%zu %f\n", id, world->Positions[id] ? world->Positions[id]->Y : -333);
+        Draw(world->renderer, world->Positions[id], world->Lives[id], world->Textures[id]);
+    }
+
+    if (world->Bullet) {
+        MoveWorld(world->Bullet->Start, world->Velocities[0], dt);
+        MoveWorld(world->Bullet->End, world->Velocities[0], dt);
+        Bullet_travel(world->Bullet, world->Positions, world->Lives, dt);
+        Bullet_draw(world->renderer, world->Bullet, dt);
+    }
+
+    for (usize i = 0; i < world->Capacity; i++) {
+        if (i != 0 && world->Bullet) {
+            Bullet_collide(world->Bullet, i, world->Positions[i], world->Lives[i]);
+        }
         if (world->Lives[i] && world->Lives[i]->Health <= 0) {
             world->Count--;
 
@@ -202,20 +243,6 @@ bool World_update(World* world, f64 dt) {
             }
         }
     }
-
-    Entity* entities = SortEntitiesByPosition(world);
-
-    for (usize i = 0; i < world->Capacity; i++) {
-        Entity entity = entities[i];
-        usize id = entity.Id;
-        // printf("%zu %f\n", id, world->Positions[id] ? world->Positions[id]->Y : -333);
-        Draw(world->renderer, world->Positions[id], world->Lives[id], world->Textures[id]);
-    }
-
-    MoveWorld(world->Bullet->Start, world->Velocities[0], dt);
-    MoveWorld(world->Bullet->End, world->Velocities[0], dt);
-    Bullet_travel(world->Bullet, world->Positions, world->Lives, dt);
-    Bullet_draw(world->renderer, world->Bullet, dt);
 
     return true;
 }

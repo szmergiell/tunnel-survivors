@@ -57,7 +57,7 @@ void CollideWorld(
             if (targets[id]->TargetId == 0 && i == 0) {
                 f64 dps = 1;
                 f64 damage = dps * dt;
-                // lives[0]->Health -= damage;
+                lives[0]->Health -= damage;
                 // printf("Attacking enitity ID: %zu with %f damage. Health left: %f\n",
                 //         targets[id]->TargetId, damage, lives[targets[id]->TargetId]->Health);
             }

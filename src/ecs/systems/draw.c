@@ -55,7 +55,7 @@ void Draw(SDL_Renderer* renderer, Position* position, Life* life, SDL_Texture* t
 
     SDL_Rect rectangle = {
         .x = position->X - (position->R),
-        .y = position->Y - (position->R),
+        .y = position->Y - 2 * (position->R),
         .w = position->R * 2,
         .h = position->R * 4,
     };
