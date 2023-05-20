@@ -21,6 +21,7 @@
 #include "ecs/components/life.h"
 #include "ecs/world.h"
 #include "game.h"
+#include "sprite.h"
 #include "types.h"
 
 typedef enum GameState {
@@ -50,6 +51,7 @@ typedef struct Game {
     SDL_Texture* GameOverTextTexture;
     i32 Score;
     f32 EnemySpawnTime;
+    Sprite* DragonSlashSprite;
 } Game;
 
 void SpawnEnemy(Game* game, Position* playerPosition, Velocity* playerVelocity) {
@@ -249,6 +251,8 @@ Game* Game_create(void) {
     if (!game->GameOverTextTexture) {
         return game;
     }
+
+    game->DragonSlashSprite = Sprite_create(game->Renderer, "assets/dragon-slash.png", 32);
 
     return game;
 }

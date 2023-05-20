@@ -5,6 +5,7 @@
 #include "life.h"
 #include "position.h"
 #include "shoot.h"
+#include "sprite.h"
 #include "velocity.h"
 #include <SDL2/SDL_render.h>
 #include <math.h>
@@ -12,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <wchar.h>
 
 f64 Magnitude(f64 x, f64 y) {
     return sqrt(x * x + y * y);
@@ -26,7 +28,13 @@ Direction Perpendicular(Direction* direction) {
     return per;
 }
 
-Bullet* Bullet_spawn(Position* position, Direction* direction, f64 width, Life* life, usize worldCapacity) {
+Bullet* Bullet_spawn(
+        Position* position,
+        Direction* direction,
+        f64 width,
+        Life* life,
+        usize worldCapacity,
+        SDL_Renderer* renderer) {
     if (!position || !direction || !life) {
         return NULL;
     }
@@ -79,15 +87,46 @@ Bullet* Bullet_spawn(Position* position, Direction* direction, f64 width, Life* 
     bullet->Start = startPosition;
     bullet->End = endPosition;
 
+    bullet->Sprite = Sprite_create(renderer, "assets/dragon-slash.png", 32);
+    Sprite_play(bullet->Sprite);
+
     return bullet;
+}
+
+SDL_Rect Bullet_get_rectangle(Position* p1, Position* p2) {
+    f64 left = fmin(p1->X, p2->X);
+    f64 right = fmax(p1->X, p2->X);
+    f64 top = fmin(p1->Y, p2->Y);
+    f64 bottom = fmax(p1->Y, p2->Y);
+    f64 width = right - left;
+    f64 height = bottom - top;
+    SDL_Rect rect = {
+        .x = left,
+        .y = top,
+        .w = width,
+        .h = height,
+    };
+    return rect;
 }
 
 void Bullet_draw(SDL_Renderer* renderer, Bullet* bullet, f64 dt) {
     if (!renderer || !bullet || !bullet->Start || !bullet->End) {
         return;
     }
+
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
     SDL_RenderDrawLineF(renderer, bullet->Start->X, bullet->Start->Y, bullet->End->X, bullet->End->Y);
+
+    SDL_Rect rect = {
+        .x = ((bullet->End->X + bullet->Start->X) / 2.0) - bullet->Width / 2,
+        .y = ((bullet->End->Y + bullet->Start->Y) / 2.0) - bullet->Width / 2,
+        .w = bullet->Width,
+        .h = bullet->Width,
+    };
+    Sprite_render(
+            bullet->Sprite,
+            renderer,
+            rect);
 }
 
 void Bullet_travel(Bullet* bullet, Position** positions, Life** lives, f64 dt) {

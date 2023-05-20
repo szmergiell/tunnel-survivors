@@ -146,7 +146,13 @@ void World_spawn_bullet(World* world) {
     Life* life = calloc(sizeof(Life), 1);
     life->MaxHealth = 1.2;
     life->Health = 1.2;
-    Bullet* bullet = Bullet_spawn(world->Positions[0], world->Targets[0]->Direction, 164, life, world->Capacity);
+    Bullet* bullet = Bullet_spawn(
+            world->Positions[0],
+            world->Targets[0]->Direction,
+            164,
+            life,
+            world->Capacity,
+            world->renderer);
     // printf("bullet spawned");
     world->Bullet = bullet;
     world->BulletSpawnTicks = perfCounter;
