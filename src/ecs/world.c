@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_render.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -132,6 +133,8 @@ void World_set_player_target(World* world, Position* position) {
     world->Targets[0]->Direction->X = distanceX / distance;
     world->Targets[0]->Direction->Y = distanceY / distance;
     world->Targets[0]->Distance = distance;
+    world->Targets[0]->Angle = atan2(world->Targets[0]->Direction->Y, world->Targets[0]->Direction->X);
+    world->Targets[0]->Angle *= 180.0 / M_PI;
 }
 
 void World_spawn_bullet(World* world) {
@@ -144,8 +147,8 @@ void World_spawn_bullet(World* world) {
     }
 
     Life* life = calloc(sizeof(Life), 1);
-    life->MaxHealth = 1.2;
-    life->Health = 1.2;
+    life->MaxHealth = 0.6;
+    life->Health = 0.6;
     Bullet* bullet = Bullet_spawn(
             world->Positions[0],
             world->Targets[0]->Direction,
@@ -190,21 +193,6 @@ bool World_update(World* world, f64 dt) {
         }
     }
 
-    if (world->Bullet && world->Bullet->Life->Health <= 0) {
-        free(world->Bullet->Life);
-        world->Bullet->Life = NULL;
-        free(world->Bullet->Start);
-        world->Bullet->Start = NULL;
-        free(world->Bullet->End);
-        world->Bullet->End = NULL;
-        free(world->Bullet->EntitiesHit);
-        world->Bullet->EntitiesHit = NULL;
-        free(world->Bullet->Velocity);
-        world->Bullet->Velocity = NULL;
-        free(world->Bullet);
-        world->Bullet = NULL;
-    }
-
     Entity* entities = SortEntitiesByPosition(world);
 
     for (usize i = 0; i < world->Capacity; i++) {
@@ -219,6 +207,21 @@ bool World_update(World* world, f64 dt) {
         MoveWorld(world->Bullet->End, world->Velocities[0], dt);
         Bullet_travel(world->Bullet, world->Positions, world->Lives, dt);
         Bullet_draw(world->renderer, world->Bullet, dt);
+    }
+
+    if (world->Bullet && world->Bullet->Life->Health <= 0) {
+        free(world->Bullet->Life);
+        world->Bullet->Life = NULL;
+        free(world->Bullet->Start);
+        world->Bullet->Start = NULL;
+        free(world->Bullet->End);
+        world->Bullet->End = NULL;
+        free(world->Bullet->EntitiesHit);
+        world->Bullet->EntitiesHit = NULL;
+        free(world->Bullet->Velocity);
+        world->Bullet->Velocity = NULL;
+        free(world->Bullet);
+        world->Bullet = NULL;
     }
 
     for (usize i = 0; i < world->Capacity; i++) {

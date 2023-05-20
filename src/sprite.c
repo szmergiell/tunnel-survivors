@@ -69,13 +69,14 @@ void Sprite_play(Sprite* sprite) {
 }
 
 SDL_Rect* Sprite_get_active_frame(Sprite* sprite) {
-    u64 pc = SDL_GetPerformanceCounter();
+    u64 pc = SDL_GetPerformanceCounter() - sprite->AnimationStart;
     f64 elapsedSeconds = pc / (f64)SDL_GetPerformanceFrequency();
     f64 timeInFrame = fmod(elapsedSeconds, sprite->TotalTime);
     f64 spriteTime = 0.0;
     for (usize i = 0; i < sprite->Count; i++) {
         spriteTime += sprite->Frames[i].Duration;
         if (spriteTime >= timeInFrame) {
+            // printf("%zu\n", i);
             return &(sprite->Frames[i].Rect);
         }
     }
@@ -89,19 +90,13 @@ SDL_Rect* Sprite_get_active_frame(Sprite* sprite) {
     return wholeSheet;
 }
 
-void Sprite_render(Sprite* sprite, SDL_Renderer* renderer, SDL_Rect rect) {
-    SDL_Rect rect2 = {
-        .x = rect.x,
-        .y = rect.y,
-        .w = sprite->FrameW,
-        .h = sprite->FrameH,
-    };
+void Sprite_render(Sprite* sprite, SDL_Renderer* renderer, SDL_Rect rect, f64 angle) {
     SDL_RenderCopyEx(
             renderer,
             sprite->Texture,
             Sprite_get_active_frame(sprite),
             &rect,
-            45.0,
+            angle,
             NULL,
             SDL_FLIP_NONE);
 }

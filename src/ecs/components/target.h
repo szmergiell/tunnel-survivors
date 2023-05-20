@@ -9,4 +9,5 @@ typedef struct Target {
     Position* Position;
     Direction* Direction;
     f64 Distance;
+    f64 Angle;
 } Target;

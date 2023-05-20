@@ -66,7 +66,7 @@ Bullet* Bullet_spawn(
     bullet->DamageDecresePerTarget = 1;
     bullet->EntitiesHit = calloc(sizeof(bool), worldCapacity);
 
-    bullet->Speed = 500;
+    bullet->Speed = 960.0 / 2.0 / 0.6;
 
     Velocity* velocity = calloc(sizeof(Velocity), 1);
     velocity->X = unitDirection->X * bullet->Speed;
@@ -109,6 +109,13 @@ SDL_Rect Bullet_get_rectangle(Position* p1, Position* p2) {
     return rect;
 }
 
+f64 Bullet_get_angle(Bullet* bullet) {
+    f64 x = bullet->End->X - bullet->Start->X;
+    f64 y = bullet->End->Y - bullet->Start->Y;
+    f64 angle = atan2(y, x) * 180.0 / M_PI;
+    return 180 + angle;
+}
+
 void Bullet_draw(SDL_Renderer* renderer, Bullet* bullet, f64 dt) {
     if (!renderer || !bullet || !bullet->Start || !bullet->End) {
         return;
@@ -123,10 +130,13 @@ void Bullet_draw(SDL_Renderer* renderer, Bullet* bullet, f64 dt) {
         .w = bullet->Width,
         .h = bullet->Width,
     };
+    f64 angle = Bullet_get_angle(bullet);
+    // printf("angle %f\n", angle);
     Sprite_render(
             bullet->Sprite,
             renderer,
-            rect);
+            rect,
+            angle);
 }
 
 void Bullet_travel(Bullet* bullet, Position** positions, Life** lives, f64 dt) {
@@ -134,6 +144,7 @@ void Bullet_travel(Bullet* bullet, Position** positions, Life** lives, f64 dt) {
     bullet->Start->Y += bullet->Velocity->Y * dt;
     bullet->End->X += bullet->Velocity->X * dt;
     bullet->End->Y += bullet->Velocity->Y * dt;
+    // printf("%f - %f\n", bullet->Life->Health, bullet->Life->Health - (bullet->LifeDecayPerSecond * dt));
     bullet->Life->Health -= bullet->LifeDecayPerSecond * dt;
 }
 
