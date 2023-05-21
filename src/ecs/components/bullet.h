@@ -2,7 +2,7 @@
 
 #include "life.h"
 #include "position.h"
-#include "sprite.h"
+#include "../../sprite.h"
 #include "velocity.h"
 #include <stdbool.h>
 

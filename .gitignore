@@ -2,6 +2,12 @@
 build
 .cache
 compile_commands.json
+Debug
+Release
+
+# Visual Studio
+.vs
+*.user
 
 # Prerequisites
 *.d

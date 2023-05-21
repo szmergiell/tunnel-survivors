@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "position.h"
+#include "ecs/components/position.h"
 #include "sprite.h"
 #include "types.h"
 

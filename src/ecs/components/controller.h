@@ -1,4 +1,6 @@
 #pragma once
 
-typedef struct Controller {} Controller;
+typedef struct Controller {
+	int Dummy;
+} Controller;
 

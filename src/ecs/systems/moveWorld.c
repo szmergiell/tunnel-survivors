@@ -1,6 +1,6 @@
-#include "direction.h"
-#include "position.h"
-#include "velocity.h"
+#include "../components/direction.h"
+#include "../components/position.h"
+#include "../components/velocity.h"
 #include "moveWorld.h"
 
 void MoveWorld(Position* position, Velocity* worldVelocity, f64 dt) {

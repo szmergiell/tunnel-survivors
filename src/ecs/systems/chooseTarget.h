@@ -1,6 +1,6 @@
 #pragma once
 
-#include "types.h"
+#include "../../types.h"
 #include "../world.h"
 
 // TODO: current ECS system shows its' limitations

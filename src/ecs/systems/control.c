@@ -5,11 +5,11 @@
 
 #include "../components/controller.h"
 #include "../components/velocity.h"
-#include "direction.h"
-#include "position.h"
-#include "types.h"
+#include "../components/direction.h"
+#include "../components/position.h"
+#include "../../types.h"
 #include "control.h"
-#include "world.h"
+#include "../world.h"
 
 // TODO: Velocity is used as direction
 void Control(Controller* controller, Velocity* velocity, World* world) {

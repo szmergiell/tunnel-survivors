@@ -3,7 +3,7 @@
 
 #include "../components/position.h"
 #include "../components/velocity.h"
-#include "direction.h"
+#include "../components/direction.h"
 #include "move.h"
 
 void Move(Position* position, Velocity* velocity, f64 dt) {

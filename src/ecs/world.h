@@ -6,10 +6,10 @@
 
 #include "components/position.h"
 #include "components/life.h"
-#include "controller.h"
-#include "direction.h"
-#include "target.h"
-#include "velocity.h"
+#include "components/controller.h"
+#include "components/direction.h"
+#include "components/target.h"
+#include "components/velocity.h"
 
 typedef struct World World;
 

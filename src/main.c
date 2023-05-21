@@ -4,6 +4,7 @@
 
 #include "game.h"
 
+#define main WinMain
 int main(int argc, char* args[]) {
     Game* Game = Game_create();
 

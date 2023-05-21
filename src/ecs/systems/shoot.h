@@ -1,9 +1,9 @@
 #pragma once
 
-#include "bullet.h"
-#include "direction.h"
-#include "life.h"
-#include "position.h"
+#include "../components/bullet.h"
+#include "../components/direction.h"
+#include "../components/life.h"
+#include "../components/position.h"
 #include <SDL2/SDL_render.h>
 
 Bullet* Bullet_spawn(

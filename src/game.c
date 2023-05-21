@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "direction.h"
+#include "ecs/components/direction.h"
 #include "ecs/components/controller.h"
 #include "ecs/components/target.h"
 #include "ecs/components/position.h"
