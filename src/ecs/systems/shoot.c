@@ -1,5 +1,3 @@
-#pragma once
-
 #include "bullet.h"
 #include "direction.h"
 #include "life.h"
@@ -121,8 +119,8 @@ void Bullet_draw(SDL_Renderer* renderer, Bullet* bullet, f64 dt) {
         return;
     }
 
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-    SDL_RenderDrawLineF(renderer, bullet->Start->X, bullet->Start->Y, bullet->End->X, bullet->End->Y);
+    // SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+    // SDL_RenderDrawLineF(renderer, bullet->Start->X, bullet->Start->Y, bullet->End->X, bullet->End->Y);
 
     SDL_Rect rect = {
         .x = ((bullet->End->X + bullet->Start->X) / 2.0) - bullet->Width / 2,

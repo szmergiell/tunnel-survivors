@@ -64,7 +64,7 @@ void Draw(SDL_Renderer* renderer, Position* position, Life* life, SDL_Texture* t
     if (texture) {
         SDL_SetTextureColorMod(texture, 255, shade, shade);
         SDL_RenderCopy(renderer, texture, NULL, &rectangle);
-    // } else {
+    } else {
         // SDL_SetRenderDrawColor(renderer, 255, shade, shade, 255);
         // SDL_RenderFillRect(renderer, &rectangle);
         SDL_RenderDrawCircle(renderer, position->X, position->Y, position->R);
