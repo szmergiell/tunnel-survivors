@@ -3,11 +3,11 @@
 #include <stdio.h>
 
 #include "../components/position.h"
-#include "direction.h"
-#include "life.h"
+#include "../components/direction.h"
+#include "../components/life.h"
 #include "move.h"
-#include "target.h"
-#include "velocity.h"
+#include "../components/target.h"
+#include "../components/velocity.h"
 #include "collide.h"
 
 bool WillCollide(Position* position1, Velocity* velocity1, Position* position2, f64 dt) {

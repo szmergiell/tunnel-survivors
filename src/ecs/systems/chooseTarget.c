@@ -5,7 +5,7 @@
 #include "../components/position.h"
 #include "../components/target.h"
 #include "../components/controller.h"
-#include "types.h"
+#include "../../types.h"
 
 void ChooseTarget(
         usize entityId,

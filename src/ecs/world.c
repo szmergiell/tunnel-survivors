@@ -4,17 +4,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "bullet.h"
-#include "collide.h"
+#include "components/bullet.h"
+#include "systems/collide.h"
 #include "components/position.h"
 #include "components/target.h"
 #include "components/life.h"
 #include "components/controller.h"
 #include "components/velocity.h"
-#include "direction.h"
-#include "game.h"
-#include "moveWorld.h"
-#include "shoot.h"
+#include "components/direction.h"
+#include "../game.h"
+#include "systems/moveWorld.h"
+#include "systems/shoot.h"
 #include "systems/chooseTarget.h"
 #include "systems/aim.h"
 #include "systems/faceTarget.h"
@@ -22,7 +22,7 @@
 #include "systems/attack.h"
 #include "systems/draw.h"
 #include "systems/move.h"
-#include "types.h"
+#include "../types.h"
 #include "world.h"
 
 typedef struct World {

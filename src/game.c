@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "direction.h"
+#include "ecs/components/direction.h"
 #include "ecs/components/controller.h"
 #include "ecs/components/target.h"
 #include "ecs/components/position.h"
@@ -234,7 +234,7 @@ Game* Game_create(void) {
         return game;
     }
 
-    game->StartScreen = Game_load_texture(game->Renderer, "assets/loading_screen2.jpg");
+    game->StartScreen = Game_load_texture(game->Renderer, "assets/loading_screen.jpg");
     game->Background = Game_load_texture(game->Renderer, "assets/background.jpg");
     game->Rama = Game_load_texture(game->Renderer, "assets/rama.png");
     game->Oni = Game_load_texture(game->Renderer, "assets/oni.png");
