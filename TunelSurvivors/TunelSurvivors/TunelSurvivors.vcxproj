@@ -168,18 +168,10 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\assets\background.jpg" />
-    <Image Include="..\..\assets\dragon-slash.gif" />
     <Image Include="..\..\assets\dragon-slash.png" />
     <Image Include="..\..\assets\loading_screen.jpg" />
-    <Image Include="..\..\assets\loading_screen2.jpg" />
-    <Image Include="..\..\assets\oni.jpg" />
     <Image Include="..\..\assets\oni.png" />
-    <Image Include="..\..\assets\rama.jpg" />
     <Image Include="..\..\assets\rama.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\assets\dragon-slash.aseprite" />
-    <None Include="..\..\assets\dragon-slash.json" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="..\..\assets\font.ttf" />
