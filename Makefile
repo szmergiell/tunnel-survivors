@@ -12,11 +12,14 @@ DEPS := $(OBJS:.o=.d)
 INC_DIRS := $(shell find $(SRC_DIRS) -type d)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
-CPPFLAGS ?= $(INC_FLAGS) -MMD -MP -g -Wall
+CPPFLAGS ?= $(INC_FLAGS) -MMD -MP -g -Wall -Wextra -Wpedantic
+release: CPPFLAGS := $(INC_FLAGS) -O3 -DNDEBUG
 LDFLAGS ?= -lSDL2 -lSDL2_image -lSDL2_ttf -lm
 
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
 	$(CC) $(OBJS) -o $@ $(LDFLAGS)
+
+release: $(BUILD_DIR)/$(TARGET_EXEC)
 
 # assembly
 $(BUILD_DIR)/%.s.o: %.s

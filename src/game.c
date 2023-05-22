@@ -234,7 +234,7 @@ Game* Game_create(void) {
         return game;
     }
 
-    game->StartScreen = Game_load_texture(game->Renderer, "assets/loading_screen2.jpg");
+    game->StartScreen = Game_load_texture(game->Renderer, "assets/loading_screen.jpg");
     game->Background = Game_load_texture(game->Renderer, "assets/background.jpg");
     game->Rama = Game_load_texture(game->Renderer, "assets/rama.png");
     game->Oni = Game_load_texture(game->Renderer, "assets/oni.png");
