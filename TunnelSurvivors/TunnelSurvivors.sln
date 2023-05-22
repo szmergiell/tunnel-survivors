@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33712.159
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TunelSurvivors", "TunelSurvivors\TunelSurvivors.vcxproj", "{F7476B92-214F-481F-9EBE-41C65B975828}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TunnelSurvivors", "TunnelSurvivors\TunnelSurvivors.vcxproj", "{F7476B92-214F-481F-9EBE-41C65B975828}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -22,7 +22,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{f7476b92-214f-481f-9ebe-41c65b975828}</ProjectGuid>
-    <RootNamespace>TunelSurvivors</RootNamespace>
+    <RootNamespace>TunnelSurvivors</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
