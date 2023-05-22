@@ -33,7 +33,7 @@ make release
 
 `windows` branch contains a Visual Studio project ready to be built.
 
-- Beyond installing SDL2 libraries with `vcpkg` I also had instal SDL2-Image with specific feature to support JPG `vcpkg install sdl2-image[libjpeg-turbo]:x64-windows --recurse``.
+- Beyond installing SDL2 libraries with `vcpkg` I also had instal SDL2-Image with specific feature to support JPG `vcpkg install sdl2-image[libjpeg-turbo]:x64-windows --recurse`.
 
 ## Motivation and goals
 
@@ -43,4 +43,4 @@ Unfortunatelly neither the meme, nor the game is fully realized. There are not e
 
 Still, in some sense I would consider it a success. At the beggining of May 2023 Arena Net announced their newest End of Dragons content "What Lies Within" to be released on 23 of May, 2023. Around that time I wanted to try a low level language (C), so I thought it would be a great idea to challenge myself to write a simple core game loop, (mostly) from scratch, before that 23rd May dead-line, so that the tunnel meme would still be relevant.
 
-Although the game and code quality is low, because of the limited time, I've still learned a lot. It was interesting to see that when I'm "investing" my own time I am more willing to let the code quality slide and focus just on delivering the "product" / "value". Which stands in cotrast to our day jobs, where we sometimes spent too much time caring about code quality.
+Although the game and code quality is low, because of the limited time, I've still learned a lot. It was interesting to see that when I'm "investing" my own time I am more willing to let the code quality slide and focus just on delivering the "product" / "value". Which stands in contrast to our day jobs, where we sometimes spent too much time caring about code quality.
