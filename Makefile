@@ -1,4 +1,4 @@
-TARGET_EXEC ?= tunel-survivors
+TARGET_EXEC ?= tunnel-survivors
 
 CC = clang
 

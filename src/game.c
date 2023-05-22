@@ -212,7 +212,7 @@ Game* Game_create(void) {
     }
 
     game->Window = SDL_CreateWindow(
-            "Tunel Survivors",
+            "Tunnel Survivors",
             SDL_WINDOWPOS_UNDEFINED,
             SDL_WINDOWPOS_UNDEFINED,
             game->Width,
