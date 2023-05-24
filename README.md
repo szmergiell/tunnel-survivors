@@ -1,5 +1,9 @@
 # tunnel-survivors
 
+## Play in browser:
+
+[https://szmergiell.github.io/tunnel-survivors/](https://szmergiell.github.io/tunnel-survivors/)
+
 Click the image to watch the gameplay:
 
 [![Watch the video](https://img.youtube.com/vi/gDEtkuTBouU/default.jpg)](https://youtu.be/gDEtkuTBouU)

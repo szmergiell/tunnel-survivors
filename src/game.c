@@ -13,6 +13,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include "ecs/components/direction.h"
 #include "ecs/components/controller.h"
 #include "ecs/components/target.h"
@@ -52,6 +56,10 @@ typedef struct Game {
     i32 Score;
     f32 EnemySpawnTime;
     Sprite* DragonSlashSprite;
+    f64 TargetFps;
+    f64 TargetFrameTime;
+    u64 LastEnemySpawnTime;
+    u64 LastSimulationTime;
 } Game;
 
 void SpawnEnemy(Game* game, Position* playerPosition, Velocity* playerVelocity) {
@@ -192,6 +200,8 @@ SDL_Texture* Game_create_text_texture(Game* game, char* text) {
 
 Game* Game_create(void) {
     Game* game = calloc(sizeof(Game), 1);
+    game->TargetFps = 60;
+    game->TargetFrameTime = 1.0 / game->TargetFps;
     game->Width = 1920;
     game->Height = 1080;
 
@@ -352,93 +362,101 @@ void Game_render_background(Game* game, f64 dt) {
     SDL_RenderCopy(game->Renderer, game->Background, &textIntRect, NULL);
 }
 
-void Game_loop(Game* game) {
+void Game_loop_internal(void *arg) {
+    Game* game = (Game*)arg;
+
+    u64 frameStart = SDL_GetPerformanceCounter();
+
     SDL_Event e;
-    bool quit = false;
 
-    f64 targetFps = 60;
-    f64 targetFrameTime = 1.0 / targetFps;
-
-    u64 lastEnemySpawnTime = SDL_GetPerformanceCounter();
-    u64 lastSimulationTime = SDL_GetPerformanceCounter();
-
-
-    while (!quit) {
-        u64 frameStart = SDL_GetPerformanceCounter();
-
-        while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) {
-                game->State = Exit;
-                quit = true;
-            }
-            if (e.type == SDL_KEYDOWN &&
+    while (SDL_PollEvent(&e)) {
+        if (e.type == SDL_QUIT) {
+            game->State = Exit;
+        }
+        if (e.type == SDL_KEYDOWN &&
                 e.key.keysym.sym == SDLK_ESCAPE) {
-                if (game->State != Start) {
-                    game->State = Start;
-                } else {
-                    game->State = Exit;
-                    quit = true;
-                }
+            if (game->State != Start) {
+                game->State = Start;
+            } else {
+                game->State = Exit;
             }
-            if (e.type == SDL_KEYDOWN &&
+        }
+        if (e.type == SDL_KEYDOWN &&
                 e.key.keysym.sym == SDLK_RETURN &&
                 game->State == Start) {
-                Game_spawn_world(game);
-                game->State = Loop;
-            }
+            Game_spawn_world(game);
+            game->State = Loop;
         }
-
-        SDL_SetRenderDrawColor(game->Renderer, 0, 0, 0, 0);
-        SDL_RenderClear(game->Renderer);
-
-        u64 currentSimulationTime = SDL_GetPerformanceCounter();
-        f64 dt = (currentSimulationTime - lastSimulationTime) / (f64)SDL_GetPerformanceFrequency();
-
-        if (game->State == Start) {
-            Game_render_start_screen(game);
-        }
-
-        if (game->State == Loop) {
-            if ((frameStart - lastEnemySpawnTime) / (f64)SDL_GetPerformanceFrequency() > game->EnemySpawnTime) {
-                lastEnemySpawnTime = frameStart;
-                SpawnEnemy(game, game->PlayerPosition, game->PlayerVelocity);
-                if (game->EnemySpawnTime > 1) {
-                    game->EnemySpawnTime -= 0.1;
-                }
-            }
-
-            Game_render_background(game, dt);
-            bool worldUpdated = World_update(game->World, dt);
-            if (!worldUpdated) {
-                game->State = GameOver;
-            }
-
-            Game_render_score(game);
-        }
-
-        if (game->State == GameOver) {
-            Game_render_end_screen(game);
-        }
-
-        if (game->State == Exit) {
-        }
-
-        lastSimulationTime = currentSimulationTime;
-
-        SDL_RenderPresent(game->Renderer);
-
-        f64 loopTime = (SDL_GetPerformanceCounter() - frameStart) / (f64)SDL_GetPerformanceFrequency();
-        f64 loopFps = (loopTime > 0) ? 1.0 / loopTime : 0.0;
-
-        f64 delay = targetFrameTime - loopTime;
-        if (delay > 0) {
-            SDL_Delay(floor(delay * 1000));
-        }
-
-        f64 delayedFrameTime = (SDL_GetPerformanceCounter() - frameStart) / (f64)SDL_GetPerformanceFrequency();
-        f64 realFps = (delayedFrameTime > 0) ? 1.0 / delayedFrameTime : 0.0;
-        // printf("target frame time: %f, real fps: %f, loop time: %f, loop fps: %f\n", targetFrameTime, realFps, loopTime, loopFps);
     }
+
+    SDL_SetRenderDrawColor(game->Renderer, 0, 0, 0, 0);
+    SDL_RenderClear(game->Renderer);
+
+    u64 currentSimulationTime = SDL_GetPerformanceCounter();
+    f64 dt = (currentSimulationTime - game->LastSimulationTime) / (f64)SDL_GetPerformanceFrequency();
+
+    if (game->State == Start) {
+        Game_render_start_screen(game);
+    }
+
+    if (game->State == Loop) {
+        if ((frameStart - game->LastEnemySpawnTime) / (f64)SDL_GetPerformanceFrequency() > game->EnemySpawnTime) {
+            game->LastEnemySpawnTime = frameStart;
+            SpawnEnemy(game, game->PlayerPosition, game->PlayerVelocity);
+            if (game->EnemySpawnTime > 1) {
+                game->EnemySpawnTime -= 0.1;
+            }
+        }
+
+        Game_render_background(game, dt);
+        bool worldUpdated = World_update(game->World, dt);
+        if (!worldUpdated) {
+            game->State = GameOver;
+        }
+
+        Game_render_score(game);
+    }
+
+    if (game->State == GameOver) {
+        Game_render_end_screen(game);
+    }
+
+    if (game->State == Exit) {
+#ifdef __EMSCRIPTEN__
+            emscripten_cancel_main_loop();
+#endif
+    }
+
+    game->LastSimulationTime = currentSimulationTime;
+
+    SDL_RenderPresent(game->Renderer);
+
+    f64 loopTime = (SDL_GetPerformanceCounter() - frameStart) / (f64)SDL_GetPerformanceFrequency();
+    f64 loopFps = (loopTime > 0) ? 1.0 / loopTime : 0.0;
+
+    f64 delay = game->TargetFrameTime - loopTime;
+    if (delay > 0) {
+        SDL_Delay(floor(delay * 1000));
+    }
+
+    f64 delayedFrameTime = (SDL_GetPerformanceCounter() - frameStart) / (f64)SDL_GetPerformanceFrequency();
+    f64 realFps = (delayedFrameTime > 0) ? 1.0 / delayedFrameTime : 0.0;
+    // printf("target frame time: %f, real fps: %f, loop time: %f, loop fps: %f\n", targetFrameTime, realFps, loopTime, loopFps);
+}
+
+void Game_loop(Game* game) {
+    game->LastEnemySpawnTime = SDL_GetPerformanceCounter();
+    game->LastSimulationTime = SDL_GetPerformanceCounter();
+
+#ifdef __EMSCRIPTEN__
+    emscripten_set_main_loop_arg(Game_loop_internal, game, 0, 1);
+#endif
+
+    #ifndef __EMSCRIPTEN__
+    while (game->State != Exit) {
+        Game_loop_internal(game);
+    }
+    #endif
 }
 
 void Game_destroy(Game* game) {
